@@ -2,22 +2,7 @@ import pygame
 import math
 import random
 from pygame.math import Vector2 as Vec2
-GRAVITY = 9.81        # 重力加速度
-RESTITUTION = 0.7     # 弾性係数
-ONE_SECOND_FRAME = 60 # 1秒間のフレーム数
-FRUIT_COLOR_SIZE = [
-    ((220, 20, 60), 8),     # Crimson
-    ((250, 128, 114), 10),   # Salmon
-    ((186, 85, 211), 24),    # Medium Orchid
-    ((255, 165, 0), 26),     # Orange
-    ((255, 140, 0), 28),     # Dark Orange
-    ((255, 0, 0), 30),       # Red
-    ((240, 230, 140), 32),   # Khaki
-    ((255, 192, 203), 34),   # Pink
-    ((255, 255, 0), 36),     # Yellow
-    ((173, 255, 47), 38),    # Green Yellow
-    ((0, 128, 0), 60)        # Green
-]
+from setting import *
 # Initialize Pygame
 pygame.init()
 screen = pygame.display.set_mode((800, 600))
