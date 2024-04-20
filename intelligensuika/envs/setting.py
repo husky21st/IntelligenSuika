@@ -1,5 +1,5 @@
-GRAVITY = 9.81        # 重力加速度
-RESTITUTION = 0.7     # 弾性係数
+GRAVITY = 12        # 重力加速度
+RESTITUTION = 0.5     # 弾性係数
 ONE_SECOND_FRAME = 60 # 1秒間のフレーム数
 FRUIT_COLOR_SIZE = [
     ((220, 20, 60), 8),      # サクランボ
@@ -14,3 +14,6 @@ FRUIT_COLOR_SIZE = [
     ((173, 255, 47), 50),    # メロン
     ((0, 128, 0), 60)        # スイカ
 ]
+BOX_LINE_WIDTH = 5
+BACKGROUND_COLOR = (255,255,255)
+BOTTOM_Y = 558

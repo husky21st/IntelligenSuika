@@ -34,12 +34,13 @@ def dot(v1, v2):
     return v1.dot(v2)
 
 class Line:
-    def __init__(self, start, end):
+    def __init__(self, start, end, line_width=5):
         self.start = Vec2(start)
         self.end = Vec2(end)
+        self.line_width = line_width
 
     def draw(self):
-        pygame.draw.line(screen, (128, 128, 128), self.start, self.end)
+        pygame.draw.line(screen, (128, 128, 128), self.start, self.end, self.line_width)
 
     def closest(self, point):
         line_vec = self.end - self.start
@@ -48,23 +49,30 @@ class Line:
         return self.start + line_vec * t
 
 class PhysicsCircle:
-    def __init__(self, center, fruit_index):
+    def __init__(self, center, fruit_index,bottom_y=558):
         self.pos = Vec2(center)
         self.fruit_index = fruit_index
         self.color  = FRUIT_COLOR_SIZE[fruit_index][0]
         self.radius = FRUIT_COLOR_SIZE[fruit_index][1]
+        self.bottom_y = bottom_y # 箱からはみ出さないように
         self.v = Vec2(0, 0)
         self.m = 1
 
     def update(self, delta):
         self.v.y += GRAVITY*ONE_SECOND_FRAME* delta  # Apply gravity
         self.pos += self.v * delta  # Update position based on velocity
-
+        
+        if self.pos.y+self.radius > self.bottom_y:
+            self.pos.y = self.bottom_y - self.radius
+            # Adjust the position to be above the line
+            self.pos.y = self.bottom_y - self.radius
+            # Reflect the velocity and apply restitution
+            self.v.y = -self.v.y * RESTITUTION
     def draw(self):
         pygame.draw.circle(screen, self.color, (int(self.pos.x), int(self.pos.y)), self.radius)
 
 # Create walls and circles list
-walls = [Line((200, 550), (650, 550)), Line((200, 550), (200, 100)), Line((650, 550), (650, 100))]
+walls = [Line((200, 550), (650, 550),BOX_LINE_WIDTH), Line((200, 550), (200, 100),BOX_LINE_WIDTH), Line((650, 550), (650, 100),BOX_LINE_WIDTH)]
 circles = []
 
 def handle_collisions(circles):
@@ -90,18 +98,30 @@ def handle_collisions(circles):
                     break
             j += 1
         i += 1
-next_fruit_index = random.randint(0, len(FRUIT_COLOR_SIZE)-1)
-next_fruit_index = PhysicsCircle((50, 100), next_fruit_index)
+        
+def create_next_fruit():
+    next_fruit_index = random.randint(0, len(FRUIT_COLOR_SIZE)-2)
+    next_fruit = PhysicsCircle((750, 50), next_fruit_index, BOTTOM_Y)
+    return next_fruit, next_fruit_index
 
+# 手につかんでいるフルーツ
+now_fruit_index = random.randint(0, len(FRUIT_COLOR_SIZE)-2)
+now_fruit = PhysicsCircle(pygame.mouse.get_pos(), now_fruit_index, BOTTOM_Y)
+
+next_fruit, next_fruit_index = create_next_fruit()
 while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
         elif event.type == pygame.MOUSEBUTTONDOWN:
-            circles.append(PhysicsCircle(event.pos, random.randint(0, len(FRUIT_COLOR_SIZE)-1)))
+            circles.append(PhysicsCircle(event.pos, now_fruit_index, BOTTOM_Y))
+            
+            now_fruit_index = next_fruit_index
+            now_fruit = PhysicsCircle(pygame.mouse.get_pos(), now_fruit_index, BOTTOM_Y)
+            
+            next_fruit, next_fruit_index = create_next_fruit()
 
     delta_time = clock.get_time() / 1000
-
     for i, circle in enumerate(circles):
         circle.update(delta_time)
         # Wall collision
@@ -132,7 +152,10 @@ while running:
                 other_circle.v = v2 - 2 * m1 / (m1 + m2) * dot(v2 - v1, -normal) * -normal * RESTITUTION
 
     # Draw everything
-    screen.fill((0, 0, 0))
+    screen.fill(BACKGROUND_COLOR)
+    now_fruit.pos = Vec2(pygame.mouse.get_pos())
+    now_fruit.draw()
+    next_fruit.draw()
     for circle in circles:
         circle.draw()
     for wall in walls:
