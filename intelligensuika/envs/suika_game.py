@@ -12,7 +12,7 @@ running = True
 # Constants
 GRAVITY = 9.8
 RESTITUTION = 0.8  # Restitution coefficient for collisions
-
+ONE_SECOND_FRAME = 60
 # Helper Functions
 def add(v1, v2):
     return Vec2(v1[0] + v2[0], v1[1] + v2[1])
@@ -59,14 +59,14 @@ class PhysicsCircle:
         self.m = 1
 
     def update(self, delta):
-        self.v.y += GRAVITY* 60 * delta  # Apply gravity
+        self.v.y += GRAVITY*ONE_SECOND_FRAME* delta  # Apply gravity
         self.pos += self.v * delta  # Update position based on velocity
 
     def draw(self):
         pygame.draw.circle(screen, (255, 255, 255), (int(self.pos.x), int(self.pos.y)), self.radius)
 
 # Create walls and circles list
-walls = [Line((100, 500), (700, 500)), Line((100, 700), (100, 100)), Line((700, 700), (700, 100))]
+walls = [Line((100, 550), (700, 550)), Line((100, 700), (100, 100)), Line((700, 700), (700, 100))]
 circles = []
 
 while running:
@@ -78,7 +78,7 @@ while running:
 
     delta_time = clock.get_time() / 1000
 
-    for circle in circles:
+    for i, circle in enumerate(circles):
         circle.update(delta_time)
         # Wall collision
         for wall in walls:
@@ -89,6 +89,23 @@ while running:
                 circle.pos += normal * overlap
                 # Reflect velocity
                 circle.v -= 2 * circle.v.dot(normal) * normal * RESTITUTION
+        
+        # Circle collision
+        for other_circle in circles[i+1:]:
+            dist = (circle.pos - other_circle.pos).length()
+            if dist < circle.radius + other_circle.radius:
+                overlap = circle.radius + other_circle.radius - dist
+                normal = normalized(circle.pos - other_circle.pos)
+                move_dist = overlap / 2
+                circle.pos += normal * move_dist
+                other_circle.pos -= normal * move_dist
+                # Adjust velocities based on mass
+                v1 = circle.v
+                v2 = other_circle.v
+                m1 = circle.m
+                m2 = other_circle.m
+                circle.v = v1 - 2 * m2 / (m1 + m2) * dot(v1 - v2, normal) * normal * RESTITUTION
+                other_circle.v = v2 - 2 * m1 / (m1 + m2) * dot(v2 - v1, -normal) * -normal * RESTITUTION
 
     # Draw everything
     screen.fill((0, 0, 0))
