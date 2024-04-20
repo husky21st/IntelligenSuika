@@ -13,6 +13,20 @@ running = True
 GRAVITY = 9.8
 RESTITUTION = 0.8  # Restitution coefficient for collisions
 ONE_SECOND_FRAME = 60
+FRUIT_COLOR_SIZE = [
+    ((220, 20, 60), 20),     # Crimson
+    ((250, 128, 114), 22),   # Salmon
+    ((186, 85, 211), 24),    # Medium Orchid
+    ((255, 165, 0), 26),     # Orange
+    ((255, 140, 0), 28),     # Dark Orange
+    ((255, 0, 0), 30),       # Red
+    ((240, 230, 140), 32),   # Khaki
+    ((255, 192, 203), 34),   # Pink
+    ((255, 255, 0), 36),     # Yellow
+    ((173, 255, 47), 38),    # Green Yellow
+    ((0, 128, 0), 40)        # Green
+]
+
 # Helper Functions
 def add(v1, v2):
     return Vec2(v1[0] + v2[0], v1[1] + v2[1])
@@ -52,9 +66,10 @@ class Line:
         return self.start + line_vec * t
 
 class PhysicsCircle:
-    def __init__(self, center, radius):
+    def __init__(self, center, selected_fruit):
         self.pos = Vec2(center)
-        self.radius = radius
+        self.color  = selected_fruit[0]
+        self.radius = selected_fruit[1]
         self.v = Vec2(0, 0)
         self.m = 1
 
@@ -63,10 +78,10 @@ class PhysicsCircle:
         self.pos += self.v * delta  # Update position based on velocity
 
     def draw(self):
-        pygame.draw.circle(screen, (255, 255, 255), (int(self.pos.x), int(self.pos.y)), self.radius)
+        pygame.draw.circle(screen, self.color, (int(self.pos.x), int(self.pos.y)), self.radius)
 
 # Create walls and circles list
-walls = [Line((100, 550), (700, 550)), Line((100, 700), (100, 100)), Line((700, 700), (700, 100))]
+walls = [Line((200, 550), (650, 550)), Line((200, 550), (200, 100)), Line((650, 550), (650, 100))]
 circles = []
 
 while running:
@@ -74,7 +89,7 @@ while running:
         if event.type == pygame.QUIT:
             running = False
         elif event.type == pygame.MOUSEBUTTONDOWN:
-            circles.append(PhysicsCircle(event.pos, random.randint(10, 100)))
+            circles.append(PhysicsCircle(event.pos, random.choice(FRUIT_COLOR_SIZE)))
 
     delta_time = clock.get_time() / 1000
 
