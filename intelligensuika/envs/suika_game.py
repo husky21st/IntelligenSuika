@@ -5,7 +5,7 @@ from pygame.math import Vector2 as Vec2
 from setting import *
 # Initialize Pygame
 pygame.init()
-screen = pygame.display.set_mode((800, 600))
+screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 clock = pygame.time.Clock()
 running = True
 
@@ -49,11 +49,11 @@ class Line:
         return self.start + line_vec * t
 
 class PhysicsCircle:
-    def __init__(self, center, fruit_index,bottom_y=558):
+    def __init__(self, center, fruit_label,bottom_y=200+BOX_HEIGHT):
         self.pos = Vec2(center)
-        self.fruit_index = fruit_index
-        self.color  = FRUIT_COLOR_SIZE[fruit_index][0]
-        self.radius = FRUIT_COLOR_SIZE[fruit_index][1]
+        self.fruit_label = fruit_label
+        self.color  = FRUIT_COLOR_SIZE[fruit_label][0]
+        self.radius = FRUIT_COLOR_SIZE[fruit_label][1]
         self.bottom_y = bottom_y # 箱からはみ出さないように
         self.v = Vec2(0, 0)
         self.m = 1
@@ -72,7 +72,11 @@ class PhysicsCircle:
         pygame.draw.circle(screen, self.color, (int(self.pos.x), int(self.pos.y)), self.radius)
 
 # Create walls and circles list
-walls = [Line((200, 550), (650, 550),BOX_LINE_WIDTH), Line((200, 550), (200, 100),BOX_LINE_WIDTH), Line((650, 550), (650, 100),BOX_LINE_WIDTH)]
+walls = [
+        Line(((SCREEN_WIDTH-BOX_WIDTH)//2, 200), ((SCREEN_WIDTH-BOX_WIDTH)//2,200+BOX_HEIGHT),BOX_LINE_WIDTH),
+        Line((SCREEN_WIDTH-(SCREEN_WIDTH-BOX_WIDTH)//2, 200), (SCREEN_WIDTH-(SCREEN_WIDTH-BOX_WIDTH)//2,200+BOX_HEIGHT),BOX_LINE_WIDTH),
+        Line(((SCREEN_WIDTH-BOX_WIDTH)//2, 200+BOX_HEIGHT), (SCREEN_WIDTH-(SCREEN_WIDTH-BOX_WIDTH)//2, 200+BOX_HEIGHT),BOX_LINE_WIDTH)
+        ]
 circles = []
 
 def handle_collisions(circles):
@@ -82,17 +86,17 @@ def handle_collisions(circles):
         while j < len(circles):
             circle1, circle2 = circles[i], circles[j]
             if (circle1.pos - circle2.pos).length() < (circle1.radius + circle2.radius):
-                if circle1.fruit_index == circle2.fruit_index and circle1.fruit_index < len(FRUIT_COLOR_SIZE) - 1:
-                    new_index = circle1.fruit_index + 1
+                if circle1.fruit_label == circle2.fruit_label and circle1.fruit_label < len(FRUIT_COLOR_SIZE) - 1:
+                    new_label = circle1.fruit_label + 1
                     new_pos = (circle1.pos + circle2.pos) * 0.5
-                    new_circle = PhysicsCircle(new_pos, new_index)
+                    new_circle = PhysicsCircle(new_pos, new_label)
                     new_circle.v = (circle1.v * circle1.m + circle2.v * circle2.m) / (circle1.m + circle2.m)
                     circles.append(new_circle)
                     circles.pop(j)  # Remove second circle first
                     circles.pop(i)  # Remove first circle
-                    i -= 1  # Adjust index after removal
+                    i -= 1  # Adjust label after removal
                     break
-                elif circle1.fruit_index == circle2.fruit_index and circle1.fruit_index == len(FRUIT_COLOR_SIZE) - 1:
+                elif circle1.fruit_label == circle2.fruit_label and circle1.fruit_label == len(FRUIT_COLOR_SIZE) - 1:
                     circles.pop(j)
                     circles.pop(i)
                     break
@@ -100,26 +104,26 @@ def handle_collisions(circles):
         i += 1
         
 def create_next_fruit():
-    next_fruit_index = random.randint(0, len(FRUIT_COLOR_SIZE)-2)
-    next_fruit = PhysicsCircle((750, 50), next_fruit_index, BOTTOM_Y)
-    return next_fruit, next_fruit_index
+    next_fruit_label = random.randint(0, len(FRUIT_COLOR_SIZE)-7)
+    next_fruit = PhysicsCircle((750, 50), next_fruit_label, BOTTOM_Y)
+    return next_fruit, next_fruit_label
 
 # 手につかんでいるフルーツ
-now_fruit_index = random.randint(0, len(FRUIT_COLOR_SIZE)-2)
-now_fruit = PhysicsCircle(pygame.mouse.get_pos(), now_fruit_index, BOTTOM_Y)
+now_fruit_label = random.randint(0, len(FRUIT_COLOR_SIZE)-7)
+now_fruit = PhysicsCircle(pygame.mouse.get_pos(), now_fruit_label, BOTTOM_Y)
 
-next_fruit, next_fruit_index = create_next_fruit()
+next_fruit, next_fruit_label = create_next_fruit()
 while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
         elif event.type == pygame.MOUSEBUTTONDOWN:
-            circles.append(PhysicsCircle(event.pos, now_fruit_index, BOTTOM_Y))
-            
-            now_fruit_index = next_fruit_index
-            now_fruit = PhysicsCircle(pygame.mouse.get_pos(), now_fruit_index, BOTTOM_Y)
-            
-            next_fruit, next_fruit_index = create_next_fruit()
+            circles.append(PhysicsCircle(event.pos, now_fruit_label, BOTTOM_Y))
+            print(event.pos)
+            now_fruit_label = next_fruit_label
+            now_fruit = PhysicsCircle(pygame.mouse.get_pos(), now_fruit_label, BOTTOM_Y)
+            next_fruit, next_fruit_label = create_next_fruit()
+            print(f"落とす果物:{now_fruit_label}, 次に来る果物{next_fruit_label}")
 
     delta_time = clock.get_time() / 1000
     for i, circle in enumerate(circles):
