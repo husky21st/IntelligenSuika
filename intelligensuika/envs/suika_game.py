@@ -2,20 +2,12 @@ import pygame
 import math
 import random
 from pygame.math import Vector2 as Vec2
-
-# Initialize Pygame
-pygame.init()
-screen = pygame.display.set_mode((800, 600))
-clock = pygame.time.Clock()
-running = True
-
-# Constants
-GRAVITY = 9.8
-RESTITUTION = 0.8  # Restitution coefficient for collisions
-ONE_SECOND_FRAME = 60
+GRAVITY = 9.81        # 重力加速度
+RESTITUTION = 0.7     # 弾性係数
+ONE_SECOND_FRAME = 60 # 1秒間のフレーム数
 FRUIT_COLOR_SIZE = [
-    ((220, 20, 60), 20),     # Crimson
-    ((250, 128, 114), 22),   # Salmon
+    ((220, 20, 60), 8),     # Crimson
+    ((250, 128, 114), 10),   # Salmon
     ((186, 85, 211), 24),    # Medium Orchid
     ((255, 165, 0), 26),     # Orange
     ((255, 140, 0), 28),     # Dark Orange
@@ -24,8 +16,13 @@ FRUIT_COLOR_SIZE = [
     ((255, 192, 203), 34),   # Pink
     ((255, 255, 0), 36),     # Yellow
     ((173, 255, 47), 38),    # Green Yellow
-    ((0, 128, 0), 40)        # Green
+    ((0, 128, 0), 60)        # Green
 ]
+# Initialize Pygame
+pygame.init()
+screen = pygame.display.set_mode((800, 600))
+clock = pygame.time.Clock()
+running = True
 
 # Helper Functions
 def add(v1, v2):
@@ -66,10 +63,11 @@ class Line:
         return self.start + line_vec * t
 
 class PhysicsCircle:
-    def __init__(self, center, selected_fruit):
+    def __init__(self, center, fruit_index):
         self.pos = Vec2(center)
-        self.color  = selected_fruit[0]
-        self.radius = selected_fruit[1]
+        self.fruit_index = fruit_index
+        self.color  = FRUIT_COLOR_SIZE[fruit_index][0]
+        self.radius = FRUIT_COLOR_SIZE[fruit_index][1]
         self.v = Vec2(0, 0)
         self.m = 1
 
@@ -84,12 +82,38 @@ class PhysicsCircle:
 walls = [Line((200, 550), (650, 550)), Line((200, 550), (200, 100)), Line((650, 550), (650, 100))]
 circles = []
 
+def handle_collisions(circles):
+    i = 0
+    while i < len(circles):
+        j = i + 1
+        while j < len(circles):
+            circle1, circle2 = circles[i], circles[j]
+            if (circle1.pos - circle2.pos).length() < (circle1.radius + circle2.radius):
+                if circle1.fruit_index == circle2.fruit_index and circle1.fruit_index < len(FRUIT_COLOR_SIZE) - 1:
+                    new_index = circle1.fruit_index + 1
+                    new_pos = (circle1.pos + circle2.pos) * 0.5
+                    new_circle = PhysicsCircle(new_pos, new_index)
+                    new_circle.v = (circle1.v * circle1.m + circle2.v * circle2.m) / (circle1.m + circle2.m)
+                    circles.append(new_circle)
+                    circles.pop(j)  # Remove second circle first
+                    circles.pop(i)  # Remove first circle
+                    i -= 1  # Adjust index after removal
+                    break
+                elif circle1.fruit_index == circle2.fruit_index and circle1.fruit_index == len(FRUIT_COLOR_SIZE) - 1:
+                    circles.pop(j)
+                    circles.pop(i)
+                    break
+            j += 1
+        i += 1
+next_fruit_index = random.randint(0, len(FRUIT_COLOR_SIZE)-1)
+next_fruit_index = PhysicsCircle((50, 100), next_fruit_index)
+
 while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
         elif event.type == pygame.MOUSEBUTTONDOWN:
-            circles.append(PhysicsCircle(event.pos, random.choice(FRUIT_COLOR_SIZE)))
+            circles.append(PhysicsCircle(event.pos, random.randint(0, len(FRUIT_COLOR_SIZE)-1)))
 
     delta_time = clock.get_time() / 1000
 
@@ -128,6 +152,7 @@ while running:
         circle.draw()
     for wall in walls:
         wall.draw()
+    handle_collisions(circles)
 
     pygame.display.flip()
     clock.tick(60)
