@@ -6,6 +6,8 @@ from setting import *
 import time
 import threading
 # Initialize Pygame
+BOX_LINE_WIDTH = 5
+GRAVITY = 9.8*60
 pygame.init()
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 clock = pygame.time.Clock()

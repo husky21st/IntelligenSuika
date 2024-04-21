@@ -35,6 +35,7 @@ def merge_fruits(arbiter, space, _):
     fruit1, fruit2 = a.body, b.body
     if fruit1.label == fruit2.label:
         mid_point = (fruit1.position + fruit2.position) / 2
+        mid_v     = (fruit1.velocity + fruit2.velocity) / 2
         space.remove(a.body, a)
         space.remove(b.body, b)
         # circlesリストから削除
@@ -42,9 +43,10 @@ def merge_fruits(arbiter, space, _):
         circles.remove(fruit2.data)
         if fruit1.label < len(FRUIT_INFO):
             new_label = fruit1.label + 1            
-            new_fruit = PhysicsCircle(mid_point, new_label)
-            circles.append(new_fruit)
-            space.add(new_fruit.body,new_fruit.shape)
+            circle = PhysicsCircle(mid_point, new_label)
+            circle.velocity = mid_v
+            circles.append(circle)
+            space.add(circle.body,circle.shape)
         return False
     return True
 
@@ -67,14 +69,17 @@ class Line:
         
 
 class PhysicsCircle:
-    def __init__(self, center, fruit_label):
+    def __init__(self, center, fruit_label,bottom_y=BOTTOM_Y,side_x=SIDE_X):
         self.color  = FRUIT_INFO[fruit_label][0]
         self.radius = FRUIT_INFO[fruit_label][1]
+        self.bottom_y = bottom_y
+        self.side_x   = side_x
         self.m = calculate_mass(self.radius)
 
         inertia = pymunk.moment_for_circle(self.m, 0, self.radius)
         body    = pymunk.Body(self.m, inertia)
         body.position = center
+        body.velocity = (0,0)
         body.label    = fruit_label
         body.data     = self
         shape = pymunk.Circle(body, self.radius)
@@ -82,10 +87,23 @@ class PhysicsCircle:
         shape.friction   = FRUIT_INFO[fruit_label][3] 
         shape.collision_type = 1
         self.shape,self.body = shape, body
-        
+    
     def update(self):
+        if self.body.position.y+self.radius > self.bottom_y+10:
+            self.body.position = self.body.position.x, self.bottom_y - self.radius
+            self.body.velocity = self.body.velocity.x, self.body.velocity.y * RESTITUTION
+            
+        if self.body.position.x+self.radius < self.side_x[0]-10:
+            self.body.position = self.side_x[0] + self.radius, self.body.position.y
+            self.body.velocity = -self.body.velocity.x * RESTITUTION, self.body.velocity.y
+            
+        if self.body.position.x+self.radius > self.side_x[1]:
+            self.body.position = self.side_x[1] - self.radius, self.body.position.y
+            self.body.velocity = -self.body.velocity.x * RESTITUTION, self.body.velocity.y
+      
+    def mouse_handle(self):
         self.body.position = pygame.mouse.get_pos()
-
+    
     def draw(self):
         pygame.draw.circle(screen, self.color, (int(self.body.position[0]), int(self.body.position[1])), self.radius)
 walls = []
@@ -104,7 +122,9 @@ next_fruit, next_fruit_label = create_next_fruit()
 circles = []        
 # メインループ
 while running:
-    now_fruit.update()
+    now_fruit.mouse_handle()
+    for circle in circles:
+        circle.update()
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
