@@ -54,16 +54,16 @@ class PhysicsCircle:
     def __init__(self, center, fruit_label,bottom_y=BOTTOM_Y,side_x=SIDE_X):
         self.pos = Vec2(center)
         self.fruit_label = fruit_label
-        self.color  = FRUIT_COLOR_SIZE[fruit_label][0]
-        self.radius = FRUIT_COLOR_SIZE[fruit_label][1]
+        self.color  = FRUIT_INFO[fruit_label][0]
+        self.radius = FRUIT_INFO[fruit_label][1]
         self.m = calculate_mass(self.radius)
         self.bottom_y = bottom_y # 箱からはみ出さないように
         self.side_x   = side_x   # 箱からはみ出さないように
         self.v = Vec2(0, 0)
-        self.m = 1
+        self.m = 10
 
     def update(self, delta):
-        self.v.y += (GRAVITY*ONE_SECOND_FRAME* delta)/self.m  # Apply gravity
+        self.v.y += (GRAVITY*60* delta)/self.m  # Apply gravity
         self.pos += self.v * delta  # Update position based on velocity
         
         if self.pos.y+self.radius > self.bottom_y:
@@ -96,7 +96,7 @@ def handle_collisions(circles):
         while j < len(circles):
             circle1, circle2 = circles[i], circles[j]
             if (circle1.pos - circle2.pos).length() < (circle1.radius + circle2.radius):
-                if circle1.fruit_label == circle2.fruit_label and circle1.fruit_label < len(FRUIT_COLOR_SIZE) - 1:
+                if circle1.fruit_label == circle2.fruit_label and circle1.fruit_label < len(FRUIT_INFO) - 1:
                     new_label = circle1.fruit_label + 1
                     new_pos = (circle1.pos + circle2.pos) * 0.5
                     new_circle = PhysicsCircle(new_pos, new_label)
@@ -106,7 +106,7 @@ def handle_collisions(circles):
                     circles.pop(i)  # Remove first circle
                     i -= 1  # Adjust label after removal
                     break
-                elif circle1.fruit_label == circle2.fruit_label and circle1.fruit_label == len(FRUIT_COLOR_SIZE) - 1:
+                elif circle1.fruit_label == circle2.fruit_label and circle1.fruit_label == len(FRUIT_INFO) - 1:
                     circles.pop(j)
                     circles.pop(i)
                     break
@@ -117,7 +117,7 @@ def calculate_mass(radius):
     return radius ** 2
       
 def create_next_fruit():
-    next_fruit_label = random.randint(0, len(FRUIT_COLOR_SIZE)-7)
+    next_fruit_label = random.randint(0, len(FRUIT_INFO)-7)
     next_fruit = PhysicsCircle((400.5, 30), next_fruit_label, BOTTOM_Y)
     return next_fruit, next_fruit_label
 
@@ -145,7 +145,7 @@ def resolve_collision(circle1, circle2):
         circle2.v += impulse / circle2.m
 
 # 手につかんでいるフルーツ
-now_fruit_label = random.randint(0, len(FRUIT_COLOR_SIZE)-7)
+now_fruit_label = random.randint(0, len(FRUIT_INFO)-7)
 now_fruit = PhysicsCircle(pygame.mouse.get_pos(), now_fruit_label, BOTTOM_Y)
 
 next_fruit, next_fruit_label = create_next_fruit()
