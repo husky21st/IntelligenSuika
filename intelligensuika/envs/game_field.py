@@ -23,7 +23,7 @@ def normalized(v):
 
 
 def calculate_mass(radius):
-    return radius ** 2 + 100
+    return radius **2
 
 def create_next_fruit():
     next_fruit_label = random.randint(0, len(FRUIT_INFO)-7)
@@ -41,7 +41,7 @@ def merge_fruits(arbiter, space, _):
         # circlesリストから削除
         circles.remove(fruit1.data)
         circles.remove(fruit2.data)
-        if fruit1.label < len(FRUIT_INFO):
+        if fruit1.label < (len(FRUIT_INFO)-1):
             new_label = fruit1.label + 1            
             circle = PhysicsCircle(mid_point, new_label)
             circle.velocity = mid_v
@@ -119,25 +119,47 @@ now_fruit       = PhysicsCircle(pygame.mouse.get_pos(), now_fruit_label)
 
 next_fruit, next_fruit_label = create_next_fruit()
 
-circles = []        
+circles = []  
+
+# タイマーイベントの設定
+DROP_FRUIT_EVENT = pygame.USEREVENT + 1
+pygame.time.set_timer(DROP_FRUIT_EVENT, 1000)  # 5秒ごとにイベントを発生
+
+def drop_fruit(x,now_fruit_label,next_fruit_label):
+    y = 180 # 固定
+    
+    circle = PhysicsCircle((x, y), now_fruit_label)
+    space.add(circle.body, circle.shape)
+    circles.append(circle)
+    now_fruit_label = next_fruit_label
+    # now_fruit = PhysicsCircle(x, y, now_fruit_label)
+    next_fruit, next_fruit_label = create_next_fruit()
+    print(f"落とす果物:{now_fruit_label}, 次に来る果物{next_fruit_label}")
+    
+    return now_fruit,now_fruit_label,next_fruit,next_fruit_label
+
 # メインループ
 while running:
-    now_fruit.mouse_handle()
+    # now_fruit.mouse_handle()
     for circle in circles:
         circle.update()
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
-        elif event.type == pygame.MOUSEBUTTONDOWN:
-            x, y = event.pos
-            if CURSOR_BOUND_MIN_X < x < CURSOR_BOUND_MAX_X and y < 200:
-                circle = PhysicsCircle((x, y), now_fruit_label)
-                space.add(circle.body, circle.shape)
-                circles.append(circle)
-                now_fruit_label = next_fruit_label
-                now_fruit = PhysicsCircle(pygame.mouse.get_pos(), now_fruit_label)
-                next_fruit, next_fruit_label = create_next_fruit()
-                print(f"落とす果物:{now_fruit_label}, 次に来る果物{next_fruit_label}")
+        elif event.type == DROP_FRUIT_EVENT:
+            x = random.randint(CURSOR_BOUND_MIN_X, CURSOR_BOUND_MAX_X)
+            print(f"x: {x}")
+            now_fruit,now_fruit_label,next_fruit,next_fruit_label = drop_fruit(x,now_fruit_label,next_fruit_label)
+        # elif event.type == pygame.MOUSEBUTTONDOWN:
+        #     x, y = event.pos
+        #     if CURSOR_BOUND_MIN_X < x < CURSOR_BOUND_MAX_X and y < 200:
+        #         circle = PhysicsCircle((x, y), now_fruit_label)
+        #         space.add(circle.body, circle.shape)
+        #         circles.append(circle)
+        #         now_fruit_label = next_fruit_label
+        #         now_fruit = PhysicsCircle(pygame.mouse.get_pos(), now_fruit_label)
+        #         next_fruit, next_fruit_label = create_next_fruit()
+        #         print(f"落とす果物:{now_fruit_label}, 次に来る果物{next_fruit_label}")
     # 物理シミュレーションを進める
     space.step(1 / 50.0)
 
@@ -147,17 +169,18 @@ while running:
     # Draw Bax
     pygame.draw.line(screen, (200, 200, 200), (CURSOR_BOUND_MIN_X,200), (CURSOR_BOUND_MIN_X,200+BOX_HEIGHT),5) # 左後壁
     pygame.draw.line(screen, (200, 200, 200), (CURSOR_BOUND_MAX_X,200), (CURSOR_BOUND_MAX_X,200+BOX_HEIGHT),5) # 左後壁
-    pygame.draw.line(screen, (200, 200, 200), (CURSOR_BOUND_MIN_X,200), (CURSOR_BOUND_MAX_X,200),5) # 上後壁
+    pygame.draw.line(screen, (200, 200, 200), (CURSOR_BOUND_MIN_X,200), (CURSOR_BOUND_MAX_X,200),5)            # 上後壁
     pygame.draw.line(screen, (200, 200, 200),(SCREEN_WIDTH-(SCREEN_WIDTH-BOX_WIDTH)//2, 240),(CURSOR_BOUND_MAX_X,200),5)
     pygame.draw.line(screen, (200, 200, 200),((SCREEN_WIDTH-BOX_WIDTH)//2, 240),(CURSOR_BOUND_MIN_X,200),5)
-
-    now_fruit.draw()
+    # now_fruit.draw()
     next_fruit.draw()
 
     for circle in circles:
         circle.draw()
     for wall in walls:
         wall.draw()
+        
+    pygame.draw.line(screen, (128, 128, 128),((SCREEN_WIDTH-BOX_WIDTH)//2, 240),(SCREEN_WIDTH-(SCREEN_WIDTH-BOX_WIDTH)//2, 240),5)
     # 画面を更新
     pygame.display.flip()
 
