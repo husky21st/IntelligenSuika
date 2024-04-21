@@ -4,9 +4,8 @@ import random
 from pygame.math import Vector2 as Vec2
 from setting import *
 import time
-import threading
+
 import pymunk
-import pymunk.pygame_util
 # Initialize Pygame
 pygame.init()
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
@@ -24,12 +23,34 @@ def normalized(v):
 
 
 def calculate_mass(radius):
-    return radius ** 2
+    return radius ** 2 + 100
 
 def create_next_fruit():
     next_fruit_label = random.randint(0, len(FRUIT_INFO)-7)
     next_fruit = PhysicsCircle((400.5, 30), next_fruit_label)
     return next_fruit, next_fruit_label
+
+def merge_fruits(arbiter, space, _):
+    a, b = arbiter.shapes
+    fruit1, fruit2 = a.body, b.body
+    if fruit1.label == fruit2.label:
+        mid_point = (fruit1.position + fruit2.position) / 2
+        space.remove(a.body, a)
+        space.remove(b.body, b)
+        # circlesリストから削除
+        circles.remove(fruit1.data)
+        circles.remove(fruit2.data)
+        if fruit1.label < len(FRUIT_INFO):
+            new_label = fruit1.label + 1            
+            new_fruit = PhysicsCircle(mid_point, new_label)
+            circles.append(new_fruit)
+            space.add(new_fruit.body,new_fruit.shape)
+        return False
+    return True
+
+# 衝突ハンドラの設定
+handler = space.add_collision_handler(1, 1)
+handler.begin = merge_fruits
 
 class Line:
     def __init__(self, start, end,elasticity=0.2,friction=1.0, radius=2.5,):
@@ -47,7 +68,6 @@ class Line:
 
 class PhysicsCircle:
     def __init__(self, center, fruit_label):
-        self.fruit_label = fruit_label
         self.color  = FRUIT_INFO[fruit_label][0]
         self.radius = FRUIT_INFO[fruit_label][1]
         self.m = calculate_mass(self.radius)
@@ -55,6 +75,8 @@ class PhysicsCircle:
         inertia = pymunk.moment_for_circle(self.m, 0, self.radius)
         body    = pymunk.Body(self.m, inertia)
         body.position = center
+        body.label    = fruit_label
+        body.data     = self
         shape = pymunk.Circle(body, self.radius)
         shape.elasticity = FRUIT_INFO[fruit_label][2]
         shape.friction   = FRUIT_INFO[fruit_label][3] 
