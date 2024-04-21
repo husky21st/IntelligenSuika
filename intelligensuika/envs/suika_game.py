@@ -83,9 +83,9 @@ class PhysicsCircle:
 
 # Create walls and circles list
 walls = [
-        Line(((SCREEN_WIDTH-BOX_WIDTH)//2, 200), ((SCREEN_WIDTH-BOX_WIDTH)//2,200+BOX_HEIGHT),BOX_LINE_WIDTH),
-        Line((SCREEN_WIDTH-(SCREEN_WIDTH-BOX_WIDTH)//2, 200), (SCREEN_WIDTH-(SCREEN_WIDTH-BOX_WIDTH)//2,200+BOX_HEIGHT),BOX_LINE_WIDTH),
-        Line(((SCREEN_WIDTH-BOX_WIDTH)//2, 200+BOX_HEIGHT), (SCREEN_WIDTH-(SCREEN_WIDTH-BOX_WIDTH)//2, 200+BOX_HEIGHT),BOX_LINE_WIDTH)
+        Line(((SCREEN_WIDTH-BOX_WIDTH)//2, 240), ((SCREEN_WIDTH-BOX_WIDTH)//2,200+BOX_HEIGHT),BOX_LINE_WIDTH), # 左前壁
+        Line((SCREEN_WIDTH-(SCREEN_WIDTH-BOX_WIDTH)//2, 240), (SCREEN_WIDTH-(SCREEN_WIDTH-BOX_WIDTH)//2,200+BOX_HEIGHT),BOX_LINE_WIDTH), # 右前壁
+        Line(((SCREEN_WIDTH-BOX_WIDTH)//2, 200+BOX_HEIGHT), (SCREEN_WIDTH-(SCREEN_WIDTH-BOX_WIDTH)//2, 200+BOX_HEIGHT),BOX_LINE_WIDTH)   # 下壁
         ]
 circles = []
 
@@ -155,7 +155,7 @@ while running:
         if event.type == pygame.QUIT:
             running = False
         elif event.type == pygame.MOUSEBUTTONDOWN:
-            if CURSOR_BOUND_MIN_X < event.pos[0] < CURSOR_BOUND_MAX_X:
+            if CURSOR_BOUND_MIN_X < event.pos[0] < CURSOR_BOUND_MAX_X and event.pos[1] < 200+40:
                 circles.append(PhysicsCircle(event.pos, now_fruit_label, BOTTOM_Y))
                 print(event.pos)
                 now_fruit_label = next_fruit_label
@@ -201,9 +201,13 @@ while running:
         for j in range(i + 1, len(circles)):
             resolve_collision(circles[i], circles[j])
             
-    # Draw the limits of the box
-    pygame.draw.line(screen, (128, 128, 128), (CURSOR_BOUND_MIN_X,100), (CURSOR_BOUND_MIN_X,200+BOX_HEIGHT),5)
-    
+    # Draw Bax
+    pygame.draw.line(screen, (200, 200, 200), (CURSOR_BOUND_MIN_X,200), (CURSOR_BOUND_MIN_X,200+BOX_HEIGHT),5) # 左後壁
+    pygame.draw.line(screen, (200, 200, 200), (CURSOR_BOUND_MAX_X,200), (CURSOR_BOUND_MAX_X,200+BOX_HEIGHT),5) # 左後壁
+    pygame.draw.line(screen, (200, 200, 200), (CURSOR_BOUND_MIN_X,200), (CURSOR_BOUND_MAX_X,200),5) # 上後壁
+    pygame.draw.line(screen, (200, 200, 200),(SCREEN_WIDTH-(SCREEN_WIDTH-BOX_WIDTH)//2, 240),(CURSOR_BOUND_MAX_X,200),5)
+    pygame.draw.line(screen, (200, 200, 200),((SCREEN_WIDTH-BOX_WIDTH)//2, 240),(CURSOR_BOUND_MIN_X,200),5)
+    pygame.draw.line(screen, (128, 128, 128), ((SCREEN_WIDTH-BOX_WIDTH)//2, 200+40), (SCREEN_WIDTH-(SCREEN_WIDTH-BOX_WIDTH)//2, 200+40),5) # 上前壁
     now_fruit.pos = Vec2(pygame.mouse.get_pos())
     now_fruit.draw()
     next_fruit.draw()
