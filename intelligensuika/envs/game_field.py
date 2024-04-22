@@ -48,6 +48,16 @@ def merge_fruits(arbiter, space, _):
             circles.append(circle)
             space.add(circle.body,circle.shape)
         return False
+
+    return True
+
+def check_game_over(circles):
+    global running
+    for circle in circles:
+        if circle.body.position.y + circle.radius < 240:
+            print("Game Over")
+            running = False
+            return False
     return True
 
 # 衝突ハンドラの設定
@@ -143,10 +153,12 @@ while running:
     # now_fruit.mouse_handle()
     for circle in circles:
         circle.update()
+    
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
-        elif event.type == DROP_FRUIT_EVENT:
+
+        elif event.type == DROP_FRUIT_EVENT and check_game_over(circles):            
             x = random.randint(CURSOR_BOUND_MIN_X, CURSOR_BOUND_MAX_X)
             print(f"x: {x}")
             now_fruit,now_fruit_label,next_fruit,next_fruit_label = drop_fruit(x,now_fruit_label,next_fruit_label)
@@ -179,7 +191,7 @@ while running:
         circle.draw()
     for wall in walls:
         wall.draw()
-        
+    
     pygame.draw.line(screen, (128, 128, 128),((SCREEN_WIDTH-BOX_WIDTH)//2, 240),(SCREEN_WIDTH-(SCREEN_WIDTH-BOX_WIDTH)//2, 240),5)
     # 画面を更新
     pygame.display.flip()
