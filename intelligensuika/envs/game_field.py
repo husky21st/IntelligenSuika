@@ -162,10 +162,9 @@ while running:
             running = False
 
         elif event.type == DROP_FRUIT_EVENT and check_game_over(circles):            
-            x = random.random()*2 - 1 # -1~1
-            print(f"x: {x}")
+            x = random.random()*2 - 1 # -1~1の乱数生成
+            print(f"乱数x: {x}")
             x = convert_position(x)
-            print(f"x: {x}")
             now_fruit,now_fruit_label,next_fruit,next_fruit_label = drop_fruit(x,now_fruit_label,next_fruit_label)
         # elif event.type == pygame.MOUSEBUTTONDOWN:
         #     x, y = event.pos
