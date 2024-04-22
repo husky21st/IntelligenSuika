@@ -26,7 +26,7 @@ def calculate_mass(radius):
     return radius **2
 
 def create_next_fruit():
-    next_fruit_label = random.randint(0, len(FRUIT_INFO)-7)
+    next_fruit_label = random.randint(1, len(FRUIT_INFO)-7)
     next_fruit = PhysicsCircle((400.5, 30), next_fruit_label)
     return next_fruit, next_fruit_label
 
@@ -127,7 +127,7 @@ for wall in walls:
     space.add(wall.body, wall.shape)
     
 # 手につかんでいるフルーツ
-now_fruit_label = random.randint(0, len(FRUIT_INFO)-7)
+now_fruit_label = random.randint(1, len(FRUIT_INFO)-7)
 now_fruit       = PhysicsCircle(pygame.mouse.get_pos(), now_fruit_label)
 
 next_fruit, next_fruit_label = create_next_fruit()
