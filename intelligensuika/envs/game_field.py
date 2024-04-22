@@ -59,7 +59,10 @@ def check_game_over(circles):
             running = False
             return False
     return True
-
+def convert_position(x):
+    x = (x + 1)*0.5 # -1~1 -> 0~1
+    x = x * (CURSOR_BOUND_MAX_X - CURSOR_BOUND_MIN_X) + CURSOR_BOUND_MIN_X
+    return int(x)
 # 衝突ハンドラの設定
 handler = space.add_collision_handler(1, 1)
 handler.begin = merge_fruits
@@ -159,7 +162,9 @@ while running:
             running = False
 
         elif event.type == DROP_FRUIT_EVENT and check_game_over(circles):            
-            x = random.randint(CURSOR_BOUND_MIN_X, CURSOR_BOUND_MAX_X)
+            x = random.random()*2 - 1 # -1~1
+            print(f"x: {x}")
+            x = convert_position(x)
             print(f"x: {x}")
             now_fruit,now_fruit_label,next_fruit,next_fruit_label = drop_fruit(x,now_fruit_label,next_fruit_label)
         # elif event.type == pygame.MOUSEBUTTONDOWN:
