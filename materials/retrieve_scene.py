@@ -7,6 +7,8 @@ from typing import Union
 
 button_template = cv2.imread("../assets/button.png")
 
+FRAME_INTERVAL = 2
+
 # 80 slices color template
 FRUITS_BGR_AND_NUM = OrderedDict((
 	("3", ((245, 90, 165), 5)),
@@ -17,15 +19,15 @@ FRUITS_BGR_AND_NUM = OrderedDict((
 ))
 
 FRUITS_BAR_Y = dict((
-	("1", 111),
-	("2", 114),
-	("3", 128),
-	("4", 129),
-	("5", 138),
+	("1", 114),
+	("2", 117),
+	("3", 131),
+	("4", 132),
+	("5", 141),
 ))
 
 FRUITS_DELAY_FRAME = dict((
-	("1", 3),
+	("1", 4),
 	("2", 4),
 	("3", 5),
 	("4", 6),
@@ -54,10 +56,10 @@ def haved_fruit_check(frame) -> Union[None, str]:
 def exist_bar_check(frame, fruit_label) -> bool:
 	gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 	check_y = FRUITS_BAR_Y[fruit_label]
-	bar_area = gray_frame[check_y:check_y + 7, 452:820]
+	bar_area = gray_frame[check_y:check_y + 5, 452:820]
 	if max(bar_area.mean(axis=0)) < 240:
 		# overlap check
-		background_area = gray_frame[check_y + 7, 460:812]
+		background_area = gray_frame[check_y + 5, 460:812]
 		if np.all((206 <= background_area) & (background_area <= 224)):
 			return False
 		else:
@@ -74,18 +76,18 @@ def save_drop_fruit_scene(frame, prev_haved_fruit, prev_exist_bar, movie_name) -
 	if prev_haved_fruit is None:
 		# fruit check
 		if prev_exist_bar:
-			return 1, haved_fruit_check(frame), True
+			return FRAME_INTERVAL, haved_fruit_check(frame), True
 		else:
 			fruit = haved_fruit_check(frame)
 			if fruit is None:
-				return 1, None, False
+				return FRAME_INTERVAL, None, False
 			else:
-				return 1, fruit, True
+				return FRAME_INTERVAL, fruit, True
 	else:
 		# bar check
 		bar_flag = exist_bar_check(frame, prev_haved_fruit)
 		if bar_flag:
-			return 1, prev_haved_fruit, True
+			return FRAME_INTERVAL, prev_haved_fruit, True
 		else:
 			# save scene
 			cv2.imwrite(f"./images/{movie_name}/{str(i).zfill(8)}_{prev_haved_fruit}.png", frame)
@@ -119,6 +121,6 @@ if __name__ == '__main__':
 				i += frame_skip
 				pbar.update(frame_skip)
 			else:
-				i += 1
+				i += FRAME_INTERVAL
 				pbar.update(frame_skip)
 		pbar.close()
