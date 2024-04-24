@@ -1,7 +1,7 @@
 import cv2
 import os
 import numpy as np
-from tqdm import tqdm
+from tqdm.contrib.concurrent import process_map
 from collections import OrderedDict
 from typing import Union
 
@@ -68,7 +68,7 @@ def exist_bar_check(frame, fruit_label) -> bool:
 		return True
 
 
-def save_drop_fruit_scene(frame, prev_haved_fruit, prev_exist_bar, movie_name) -> (int, bool, bool):
+def save_drop_fruit_scene(i, frame, prev_haved_fruit, prev_exist_bar, movie_name) -> (int, bool, bool):
 	# game scene check
 	if not is_game_scene(frame):
 		return 30, None, True
@@ -94,33 +94,34 @@ def save_drop_fruit_scene(frame, prev_haved_fruit, prev_exist_bar, movie_name) -
 			return FRUITS_DELAY_FRAME[prev_haved_fruit], None, False
 
 
+def processing_video(movie_file):
+	cap = cv2.VideoCapture(os.path.join("./movies", movie_file))
+	if not cap.isOpened():
+		return
+	movie_name = movie_file[:-4]
+	os.makedirs(f"./images/{movie_name}", exist_ok=True)
+
+	num_frame = cap.get(cv2.CAP_PROP_FRAME_COUNT)
+	haved_fruit = None
+	exist_bar = True
+	i = 0
+	# pbar = tqdm(range(int(num_frame)), desc="movie frame process", ncols=80, total=num_frame)
+	while i < num_frame:
+		cap.set(cv2.CAP_PROP_POS_FRAMES, i)
+		ret, frame = cap.read()
+		if ret:
+			frame_skip, haved_fruit, exist_bar = save_drop_fruit_scene(i, frame, haved_fruit, exist_bar,
+																	   movie_name=movie_name)
+			i += frame_skip
+			# pbar.update(frame_skip)
+		else:
+			i += FRAME_INTERVAL
+			# pbar.update(FRAME_INTERVAL)
+	# pbar.close()
+
+
 if __name__ == '__main__':
 	os.makedirs("./images", exist_ok=True)
 	files = os.listdir("./movies")
-	for file in tqdm(files):
-		if file[-4:] != ".mp4":
-			continue
-		cap = cv2.VideoCapture(os.path.join("./movies", file))
-		if not cap.isOpened():
-			break
-		movie_name = file[:-4]
-		os.makedirs(f"./images/{movie_name}", exist_ok=True)
-
-		fps = cap.get(cv2.CAP_PROP_FPS)
-		num_frame = cap.get(cv2.CAP_PROP_FRAME_COUNT)
-		haved_fruit = None
-		exist_bar = True
-		i = 0
-		pbar = tqdm(range(int(num_frame)), desc="movie frame process", ncols=80, total=num_frame)
-		while i < num_frame:
-			cap.set(cv2.CAP_PROP_POS_FRAMES, i)
-			ret, frame = cap.read()
-			if ret:
-				frame_skip, haved_fruit, exist_bar = save_drop_fruit_scene(frame, haved_fruit, exist_bar,
-																		   movie_name=movie_name)
-				i += frame_skip
-				pbar.update(frame_skip)
-			else:
-				i += FRAME_INTERVAL
-				pbar.update(frame_skip)
-		pbar.close()
+	files = [file for file in files if file[-4:] == ".mp4"]
+	r = process_map(processing_video, files, max_workers=2)
