@@ -161,4 +161,4 @@ cython_debug/
 
 materials/yt-dlp_macos
 materials/movies
-!materials/movies/.gitkeep
+materials/images
