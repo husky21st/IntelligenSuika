@@ -14,7 +14,7 @@ FRUITS_BGR_AND_NUM = OrderedDict((
 	("4", ((14, 188, 246), 8)),
 	("1", ((47, 35, 245), 5)),
 	("2", ((82, 97, 242), 3)),
-	))
+))
 
 FRUITS_BAR_Y = dict((
 	("1", 111),
@@ -23,7 +23,6 @@ FRUITS_BAR_Y = dict((
 	("4", 129),
 	("5", 138),
 ))
-
 
 FRUITS_DELAY_FRAME = dict((
 	("1", 3),
@@ -55,7 +54,7 @@ def haved_fruit_check(frame) -> Union[None, str]:
 def exist_bar_check(frame, fruit_label) -> bool:
 	gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 	check_y = FRUITS_BAR_Y[fruit_label]
-	bar_area = gray_frame[check_y:check_y+7, 452:820]
+	bar_area = gray_frame[check_y:check_y + 7, 452:820]
 	if max(bar_area.mean(axis=0)) < 240:
 		# overlap check
 		background_area = gray_frame[check_y + 7, 460:812]
@@ -107,33 +106,19 @@ if __name__ == '__main__':
 
 		fps = cap.get(cv2.CAP_PROP_FPS)
 		num_frame = cap.get(cv2.CAP_PROP_FRAME_COUNT)
-		# haved_fruit = None
-		# exist_bar = True
 		haved_fruit = None
 		exist_bar = True
 		i = 0
 		pbar = tqdm(range(int(num_frame)), desc="movie frame process", ncols=80, total=num_frame)
 		while i < num_frame:
 			cap.set(cv2.CAP_PROP_POS_FRAMES, i)
-			# cap.set(cv2.CAP_PROP_POS_FRAMES, (4*3600+13*60+27)*30)
-			# cap.set(cv2.CAP_PROP_POS_FRAMES, (0 * 3600 + 56 * 60 + 12) * 30)
-			# cap.set(cv2.CAP_PROP_POS_FRAMES, (0 * 3600 + 16 * 60 + 25) * 30+7)  # f1
-			# cap.set(cv2.CAP_PROP_POS_FRAMES, (4 * 3600 + 17 * 60 + 46) * 30+41)  # f1 dropchokugo
-			# cap.set(cv2.CAP_PROP_POS_FRAMES, (1 * 3600 + 46 * 60 + 25) * 30+7)  # f2
-			# cap.set(cv2.CAP_PROP_POS_FRAMES, (0 * 3600 + 20 * 60 + 46) * 30+41)  # f2 dropchokugo
-			# cap.set(cv2.CAP_PROP_POS_FRAMES,  (0 * 3600 + 43 * 60 + 55) * 30+41)  # f3
-			# cap.set(cv2.CAP_PROP_POS_FRAMES, (0 * 3600 + 30 * 60 + 46) * 30+41)  # f4
-			# cap.set(cv2.CAP_PROP_POS_FRAMES, (0 * 3600 + 18 * 60 + 46) * 30+40)  # f5
-			# cap.set(cv2.CAP_PROP_POS_FRAMES, (4 * 3600 + 17 * 60 + 46) * 30 + 50)  # nothing
 			ret, frame = cap.read()
 			if ret:
-				frame_skip, haved_fruit, exist_bar = save_drop_fruit_scene(frame, haved_fruit, exist_bar, movie_name=movie_name)
+				frame_skip, haved_fruit, exist_bar = save_drop_fruit_scene(frame, haved_fruit, exist_bar,
+																		   movie_name=movie_name)
 				i += frame_skip
 				pbar.update(frame_skip)
 			else:
 				i += 1
 				pbar.update(frame_skip)
 		pbar.close()
-
-
-
