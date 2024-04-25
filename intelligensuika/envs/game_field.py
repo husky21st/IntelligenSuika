@@ -179,7 +179,7 @@ while running:
             now_fruit,now_fruit_label,next_fruit,next_fruit_label = drop_fruit(x,now_fruit_label,next_fruit_label)
             
     # 物理シミュレーションを進める
-    space.step(1 / 50.0)
+    space.step(1 / 60.0)
 
     # 画面をクリア
     screen.fill((255, 255, 255))

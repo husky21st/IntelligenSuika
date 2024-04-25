@@ -1,6 +1,10 @@
 GRAVITY = 980         # 重力加速度
 RESTITUTION = 0.1     # 弾性係数
 
+FRAMES_PER_SECOND = 30      # 1秒間に描画するフレーム数
+WAIT_FRAMES       = 60      # 観測を送るまでの待機フレーム数
+PYMUNK_FPS        = 30      # pymunkの更新頻度
+
 WALL_ELASTICITY = 0.1 # 壁の弾性係数
 WALL_FRICTION   = 1   # 壁の摩擦係数
 
