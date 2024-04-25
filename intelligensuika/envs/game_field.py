@@ -21,7 +21,6 @@ def normalized(v):
         return Vec2(0, 0)
     return v.normalize()
 
-
 def calculate_mass(radius):
     return radius **2
 
@@ -48,13 +47,14 @@ def merge_fruits(arbiter, space, _):
             circles.append(circle)
             space.add(circle.body,circle.shape)
         return False
-
     return True
 
 def check_game_over(circles):
     global running
     for circle in circles:
+        print(circle.radius+circle.body.position.y)
         if circle.body.position.y + circle.radius < 240:
+            
             print("Game Over")
             running = False
             return False
@@ -136,7 +136,7 @@ circles = []
 
 # タイマーイベントの設定
 DROP_FRUIT_EVENT = pygame.USEREVENT + 1
-pygame.time.set_timer(DROP_FRUIT_EVENT, 1000)  # 5秒ごとにイベントを発生
+pygame.time.set_timer(DROP_FRUIT_EVENT, 5000)  # 5秒ごとにイベントを発生
 
 def drop_fruit(x,now_fruit_label,next_fruit_label):
     y = 180 # 固定
@@ -151,6 +151,15 @@ def drop_fruit(x,now_fruit_label,next_fruit_label):
     
     return now_fruit,now_fruit_label,next_fruit,next_fruit_label
 
+def send_fruits_data(circles):
+    fruits_data = []
+    for circle in circles:
+        x = ((circle.body.position.x-((SCREEN_WIDTH-BOX_WIDTH)//2)) / BOX_WIDTH)*2 -1
+        y = 1-(circle.body.position.y - 200) / BOX_HEIGHT
+        fruits_data.append([x,y,circle.body.label])
+        print(f"果物の位置: {x},{y}, くだものの種類: {circle.body.label}")
+        
+    return fruits_data
 # メインループ
 while running:
     # now_fruit.mouse_handle()
@@ -161,21 +170,14 @@ while running:
         if event.type == pygame.QUIT:
             running = False
 
-        elif event.type == DROP_FRUIT_EVENT and check_game_over(circles):            
+        # elif event.type == DROP_FRUIT_EVENT and check_game_over(circles):       
+        elif event.type == pygame.KEYDOWN:
             x = random.random()*2 - 1 # -1~1の乱数生成
             print(f"乱数x: {x}")
             x = convert_position(x)
+            fruit_data = send_fruits_data(circles)
             now_fruit,now_fruit_label,next_fruit,next_fruit_label = drop_fruit(x,now_fruit_label,next_fruit_label)
-        # elif event.type == pygame.MOUSEBUTTONDOWN:
-        #     x, y = event.pos
-        #     if CURSOR_BOUND_MIN_X < x < CURSOR_BOUND_MAX_X and y < 200:
-        #         circle = PhysicsCircle((x, y), now_fruit_label)
-        #         space.add(circle.body, circle.shape)
-        #         circles.append(circle)
-        #         now_fruit_label = next_fruit_label
-        #         now_fruit = PhysicsCircle(pygame.mouse.get_pos(), now_fruit_label)
-        #         next_fruit, next_fruit_label = create_next_fruit()
-        #         print(f"落とす果物:{now_fruit_label}, 次に来る果物{next_fruit_label}")
+            
     # 物理シミュレーションを進める
     space.step(1 / 50.0)
 
