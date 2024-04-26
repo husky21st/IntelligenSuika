@@ -28,8 +28,10 @@ class SuikaEnv(gym.Env):
         self.frame_count  = 0
         self.action_space = spaces.Box(low=-1, high=1, shape=(1,), dtype=np.float32)      # -1~1の値を受け取る
         self.observation_space = spaces.Box(low=-1, high=1, shape=(2,), dtype=np.float32) # 2つの値を返す
-        self.reward       = REWARD_DEFAULT
-        self.total_reward = 0
+        # self.observation  = [[0.0,0.0] for _ in range(MAX_FRUIT_NUM)]                     # 60個の果物の位置を初期化
+        self.max_fruit_num = MAX_FRUIT_NUM
+        self.reward        = REWARD_DEFAULT
+        self.total_reward  = 0
         
     def step(self,action):
         # actionは-1~1の値
@@ -44,8 +46,6 @@ class SuikaEnv(gym.Env):
         while self.frame_count < self.wait_frames:
             for fruit in self.fruit_box:
                 fruit.update()
-            # if self.render_mode == 'human':
-            #     self.render()
             self.render()
             self.clock.tick(self.metadate["render_fps"])
             self.frame_count += 1
@@ -70,24 +70,21 @@ class SuikaEnv(gym.Env):
             self.space.add(wall.body, wall.shape)
         # 現在の果物の初期化
         self.now_fruit_label = random.randint(1, len(FRUIT_INFO)-7)
-        # self.now_fruit       = PhysicsCircle((400.5, 30), self.now_fruit_label)
-        # 次の果物の初期化
         self.next_fruit, self.next_fruit_label = self.create_next_fruit()
         self.screen = None
         self.clock  = None
-        # if self.render_mode == 'human':
-        #     self.render()
         self.render()
         return self._get_obs(), {}
+    
     def _get_obs(self):
-        # 仮) 現在の果物のラベル, 次の果物のラベル, 現在の箱の状態(果物の位置,ラベル)
-        obs = []
-        for fruit in self.fruit_box:
-            x = ((fruit.body.position.x-((SCREEN_WIDTH-BOX_WIDTH)//2)) / BOX_WIDTH)*2 -1
-            y = 1-(fruit.body.position.y - 200) / BOX_HEIGHT
-            # obs.append([x,y,fruit.body.label]) # ラベルをどう含めるか未定
-            obs.append([x,y])
+        # 仮) 現在の果物のラベル, 次の果物のラベル, 現在の箱の状態(果物の位置)
+        obs = [[0.0,0.0] for _ in range(self.max_fruit_num)]
+        for i in range(len(self.fruit_box)):
+            x = ((self.fruit_box[i].body.position.x-((SCREEN_WIDTH-BOX_WIDTH)//2)) / BOX_WIDTH)*2 -1
+            y = 1-(self.fruit_box[i].body.position.y - 200) / BOX_HEIGHT
+            obs[i] = [x,y]
         return obs
+    
     def merge_fruits(self,arbiter, space, _):
         a, b = arbiter.shapes
         fruit1, fruit2 = a.body, b.body
@@ -110,15 +107,18 @@ class SuikaEnv(gym.Env):
                 self.total_reward += self.reward
             return False
         return True
+    
     def create_next_fruit(self):
         next_fruit_label = random.randint(1, len(FRUIT_INFO)-7)
         next_fruit = PhysicsCircle((400.5, 30), next_fruit_label)
         return next_fruit, next_fruit_label
+    
     def check_game_over(self):
         for fruit in self.fruit_box:
             if fruit.body.position.y + fruit.radius < 240:
                 return True
         return False
+    
     def drop_fruit(self,x):
         y = 180 # 固定
         fruit = PhysicsCircle((x, y), self.now_fruit_label)
@@ -127,20 +127,16 @@ class SuikaEnv(gym.Env):
         self.now_fruit_label = self.next_fruit_label
         self.next_fruit, self.next_fruit_label = self.create_next_fruit()
         print(f"落とす果物:{self.now_fruit_label}, 次に来る果物{self.next_fruit_label}")
-        return
+    
     # 描写に関わる関数
     def render(self):
-        # pygameの初期化
-        # if self.render_mode == 'rgb_array':
-        #     self.screen = None
-        #     self.clock  = pygame.time.Clock()
         if self.screen is None:
             pygame.init()
             if self.render_mode == 'human':
                 pygame.display.init()
                 self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-            else: # mode in "rgb_array"
-                self.screen = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
+            # else: # mode in "rgb_array"
+            #     self.screen = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
         if self.clock is None:
             self.clock  = pygame.time.Clock()
             
@@ -164,6 +160,7 @@ class SuikaEnv(gym.Env):
             pygame.draw.line(self.screen, (128, 128, 128),((SCREEN_WIDTH-BOX_WIDTH)//2, 240),(SCREEN_WIDTH-(SCREEN_WIDTH-BOX_WIDTH)//2, 240),5)
             self.clock.tick(self.metadate["render_fps"])
             pygame.display.flip()
+
     def close(self):
         if self.screen is not None:
             pygame.display.quit()
@@ -184,7 +181,7 @@ for _ in range(1000):
     # アクションを環境に適用し、次の状態と報酬、終了フラグを取得
     state, reward, done, info = env.step(action)
     print(reward, done)
-    print(len(state))
+    print(state)
     # 状態を視覚的に表示
     env.render()
     # エピソードが終了したらループを抜ける
