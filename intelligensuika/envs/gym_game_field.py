@@ -118,7 +118,7 @@ class SuikaEnv(gym.Env):
     
     def check_game_over(self):
         for fruit in self.fruit_box:
-            if fruit.body.position.y + fruit.radius < 240:
+            if fruit.body.position.y + fruit.radius < GAME_OVER_LINE:
                 return True
         return False
     

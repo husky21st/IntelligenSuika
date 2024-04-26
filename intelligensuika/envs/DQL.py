@@ -29,16 +29,19 @@ class Actor(nn.Module):
 class Critic(nn.Module):
     def __init__(self, state_dim, action_dim):
         super(Critic, self).__init__()
-        self.fc1 = nn.Linear(state_dim + action_dim, 256)
+        self.fc1 = nn.Linear(state_dim + action_dim, 256)  # Ensure the input dimension is correct
         self.fc2 = nn.Linear(256, 256)
         self.fc3 = nn.Linear(256, 1)
 
     def forward(self, state, action):
-        x = torch.cat([state, action], dim=-1)
-        x = torch.relu(self.fc1(x))
+        # Ensure action tensor is correctly shaped to concatenate with state
+        action = action.unsqueeze(-1) if action.dim() == 1 else action
+        print(f"state:{state.shape}, action:{action.shape}")
+        combined = torch.cat([state, action], dim=-1)
+        x = torch.relu(self.fc1(combined))
         x = torch.relu(self.fc2(x))
-        x = self.fc3(x)
-        return x
+        return self.fc3(x)
+
 class Agent:
     def __init__(self, actor, critic, actor_optimizer, critic_optimizer, replay_buffer, 
                  state_dim, action_dim, action_bound, device, gamma=0.99, tau=0.005):
@@ -72,8 +75,8 @@ class Agent:
 
         # Update Critic
         next_actions  = self.actor(next_states)
-        print(next_actions.shape)
-        print(next_states.shape)
+        # print(next_actions.shape)
+        # print(next_states.shape)
         next_q_values = self.critic(next_states, next_actions)
         expected_q_values = rewards + self.gamma * next_q_values * (1 - dones)
         current_q_values  = self.critic(states, actions)
@@ -119,7 +122,6 @@ class ReplayBuffer:
 def train(agent,env,n_episodes, batch_size):
     for episode in range(n_episodes):
         state = env.reset()
-        print(state)
         episode_reward = 0
         done = False
         while not done:
@@ -134,7 +136,7 @@ def train(agent,env,n_episodes, batch_size):
         print(f"Episode {episode}: {episode_reward}")
 
 def main():
-    env = SuikaEnv(render_mode='tgb_array')
+    env = SuikaEnv(render_mode='rgb-array')
     state_dim    = env.observation_space.shape[1]
     action_dim   = env.action_space.shape[0]
     action_bound = env.action_space.high[0]
