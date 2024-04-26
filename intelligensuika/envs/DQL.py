@@ -8,6 +8,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.distributions import Normal
+
 class ActorCritic(nn.Module):
     def __init__(self, state_dim, action_dim):
         super(ActorCritic, self).__init__()
@@ -30,6 +31,7 @@ def train(model, env, num_episodes, learning_rate=0.01):
     optimizer = optim.Adam(model.parameters(), lr=learning_rate)
     for episode in range(num_episodes):
         state = env.reset()
+        print(state)
         done = False
         total_reward = 0
         while not done:
@@ -51,7 +53,8 @@ def train(model, env, num_episodes, learning_rate=0.01):
         print(f'Episode {episode}: Total Reward: {total_reward}')
 # Initialize the environment and the model
 env = SuikaEnv()
-state_dim = env.observation_space.shape[0]
+state_dim = env.default_observation.shape
+print(state_dim)
 action_dim = 1  # Continuous action space
 model = ActorCritic(state_dim, action_dim)
 # Train the model

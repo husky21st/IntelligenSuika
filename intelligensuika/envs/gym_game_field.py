@@ -27,9 +27,9 @@ class SuikaEnv(gym.Env):
         self.wait_frames  = WAIT_FRAMES
         self.frame_count  = 0
         self.action_space = spaces.Box(low=-1, high=1, shape=(1,), dtype=np.float32)      # -1~1の値を受け取る
-        self.observation_space = spaces.Box(low=-1, high=1, shape=(2,), dtype=np.float32) # 2つの値を返す
-        # self.observation  = [[0.0,0.0] for _ in range(MAX_FRUIT_NUM)]                     # 60個の果物の位置を初期化
-        self.max_fruit_num = MAX_FRUIT_NUM
+        # self.observation_space = spaces.Box(low=-1, high=1, shape=(2,), dtype=np.float32) # 2つの値を返す
+        self.default_observation  = [[0.0,0.0] for _ in range(MAX_FRUIT_NUM)]                     # 60個の果物の位置を初期化
+        # self.max_fruit_num = MAX_FRUIT_NUM
         self.reward        = REWARD_DEFAULT
         self.total_reward  = 0
         
@@ -78,7 +78,8 @@ class SuikaEnv(gym.Env):
     
     def _get_obs(self):
         # 仮) 現在の果物のラベル, 次の果物のラベル, 現在の箱の状態(果物の位置)
-        obs = [[0.0,0.0] for _ in range(self.max_fruit_num)]
+        # obs = [[0.0,0.0] for _ in range(self.max_fruit_num)]
+        obs = self.default_observation
         for i in range(len(self.fruit_box)):
             x = ((self.fruit_box[i].body.position.x-((SCREEN_WIDTH-BOX_WIDTH)//2)) / BOX_WIDTH)*2 -1
             y = 1-(self.fruit_box[i].body.position.y - 200) / BOX_HEIGHT
@@ -167,25 +168,22 @@ class SuikaEnv(gym.Env):
             pygame.quit()
             self.isopen = False
             
-import gym
-import numpy as np
+# import gym
+# import numpy as np
 
-# mode in "human" or "rgb_array"
-env = SuikaEnv(render_mode='human')
-# 環境をリセットして初期状態を取得
-state = env.reset()
-# 何ステップかのシミュレーション
-for _ in range(1000):
-    # ランダムなアクションを生成
-    action = env.action_space.sample()
-    # アクションを環境に適用し、次の状態と報酬、終了フラグを取得
-    state, reward, done, info = env.step(action)
-    print(reward, done)
-    print(state)
-    # 状態を視覚的に表示
-    env.render()
-    # エピソードが終了したらループを抜ける
-    if done:
-        break
-# 環境を閉じる
-env.close()
+# # mode in "human" or "rgb_array"
+# env = SuikaEnv(render_mode='human')
+# # 環境をリセットして初期状態を取得
+# state = env.reset()
+# # 何ステップかのシミュレーション
+# for _ in range(1000):
+#     # ランダムなアクションを生成
+#     action = env.action_space.sample()
+#     # アクションを環境に適用し、次の状態と報酬、終了フラグを取得
+#     state, reward, done, info = env.step(action)
+#     print(reward, done)
+#     env.render()
+#     if done:
+#         break
+# # 環境を閉じる
+# env.close()
