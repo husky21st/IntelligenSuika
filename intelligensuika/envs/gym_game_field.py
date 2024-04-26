@@ -27,8 +27,9 @@ class SuikaEnv(gym.Env):
         self.wait_frames  = WAIT_FRAMES
         self.frame_count  = 0
         self.action_space = spaces.Box(low=-1, high=1, shape=(1,), dtype=np.float32)      # -1~1の値を受け取る
-        # self.observation_space = spaces.Box(low=-1, high=1, shape=(2,), dtype=np.float32) # 2つの値を返す
-        self.default_observation  = [[0.0,0.0] for _ in range(MAX_FRUIT_NUM)]                     # 60個の果物の位置を初期化
+        # self.observation_space    = spaces.Box(low=-1, high=1, shape=(2,), dtype=np.float32) # 2つの値を返す
+        self.default_observation  = [[0.0,0.0] for _ in range(MAX_FRUIT_NUM)]                             # 60個の果物の位置を初期化
+        self.observation_space    = spaces.Box(low=-1, high=1, shape=(MAX_FRUIT_NUM,2), dtype=np.float32)
         # self.max_fruit_num = MAX_FRUIT_NUM
         self.reward        = REWARD_DEFAULT
         self.total_reward  = 0
@@ -74,7 +75,8 @@ class SuikaEnv(gym.Env):
         self.screen = None
         self.clock  = None
         self.render()
-        return self._get_obs(), {}
+        # return self._get_obs(), {}
+        return self._get_obs()
     
     def _get_obs(self):
         # 仮) 現在の果物のラベル, 次の果物のラベル, 現在の箱の状態(果物の位置)

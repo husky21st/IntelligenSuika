@@ -42,7 +42,7 @@ class Critic(nn.Module):
 class Agent:
     def __init__(self, actor, critic, actor_optimizer, critic_optimizer, replay_buffer, 
                  state_dim, action_dim, action_bound, device, gamma=0.99, tau=0.005):
-        self.actor = actor
+        self.actor  = actor
         self.critic = critic
         self.actor_optimizer = actor_optimizer
         self.critic_optimizer = critic_optimizer
@@ -55,7 +55,8 @@ class Agent:
         self.tau = tau      # Soft update parameter
 
     def select_action(self, state, noise_scale=0.1):
-        state = torch.FloatTensor(state.reshape(1, -1)).to(self.device)
+        state = torch.tensor(state, dtype=torch.float32).to(self.device)
+        # state = torch.FloatTensor(state.reshape(1, -1)).to(self.device)
         action = self.actor(state).cpu().data.numpy().flatten()
         if noise_scale > 0:
             action += noise_scale * np.random.randn(self.action_dim)
@@ -63,17 +64,19 @@ class Agent:
 
     def update(self, batch_size):
         states, actions, rewards, next_states, dones = self.replay_buffer.sample(batch_size)
-        states = torch.FloatTensor(states).to(self.device)
+        states  = torch.FloatTensor(states).to(self.device)
         actions = torch.FloatTensor(actions).to(self.device)
         rewards = torch.FloatTensor(rewards).to(self.device)
         next_states = torch.FloatTensor(next_states).to(self.device)
         dones = torch.FloatTensor(dones).to(self.device)
 
         # Update Critic
-        next_actions = self.actor(next_states)
+        next_actions  = self.actor(next_states)
+        print(next_actions.shape)
+        print(next_states.shape)
         next_q_values = self.critic(next_states, next_actions)
         expected_q_values = rewards + self.gamma * next_q_values * (1 - dones)
-        current_q_values = self.critic(states, actions)
+        current_q_values  = self.critic(states, actions)
         critic_loss = torch.nn.functional.mse_loss(current_q_values, expected_q_values.detach())
         self.critic_optimizer.zero_grad()
         critic_loss.backward()
@@ -116,21 +119,24 @@ class ReplayBuffer:
 def train(agent,env,n_episodes, batch_size):
     for episode in range(n_episodes):
         state = env.reset()
+        print(state)
         episode_reward = 0
         done = False
         while not done:
-            action = agent.get_action(state)
+            action = agent.select_action(state)
             next_state, reward, done, _ = env.step(action)
-            agent.memory.push(state, action, reward, next_state, done)
+            agent.replay_buffer.push(state, action, reward, next_state, done)
             episode_reward += reward
             state = next_state
-            agent.update(batch_size)
+            if len(agent.replay_buffer) >= batch_size:
+                agent.update(batch_size)
+            # agent.update(batch_size)
         print(f"Episode {episode}: {episode_reward}")
 
 def main():
-    env = SuikaEnv(render_mode='human')
-    state_dim = env.observation_space.shape[0]
-    action_dim = env.action_space.shape[0]
+    env = SuikaEnv(render_mode='tgb_array')
+    state_dim    = env.observation_space.shape[1]
+    action_dim   = env.action_space.shape[0]
     action_bound = env.action_space.high[0]
     print(state_dim, action_dim, action_bound)
     actor = Actor(state_dim, action_dim, action_bound)
@@ -139,7 +145,7 @@ def main():
     critic_target = Critic(state_dim, action_dim)
     actor_target.load_state_dict(actor.state_dict())
     critic_target.load_state_dict(critic.state_dict())
-    actor_optimizer = optim.Adam(actor.parameters(), lr=0.0001)
+    actor_optimizer  = optim.Adam(actor.parameters(), lr=0.0001)
     critic_optimizer = optim.Adam(critic.parameters(), lr=0.001)
     memory = ReplayBuffer(1000000)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
