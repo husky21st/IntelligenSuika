@@ -6,7 +6,7 @@ WAIT_FRAMES       = 120  # 観測を送るまでの待機フレーム数
 PYMUNK_FPS        = 45  # pymunkの更新頻度
 WALL_ELASTICITY = 0.01  # 壁の弾性係数
 WALL_FRICTION   = 1     # 壁の摩擦係数
-MAX_FRUIT_NUM   = 62    # 最大フルーツ数
+MAX_FRUIT_NUM   = 60    # 最大フルーツ数
 GAME_OVER_LINE  = 240 # defalut: 240
 
 # [色, 半径, 弾性力, 摩擦力, 報酬]

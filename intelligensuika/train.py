@@ -17,7 +17,6 @@ for i in range(10):
         # アクションを環境に適用し、次の状態と報酬、終了フラグを取得
         state, reward, done, _ = env.step(action)
         print(f"reward:{reward}")
-        print(f"now_label: {state[0][2]}, next_label: {state[1][2]}")
         env.render()
 # 環境を閉じる
 env.close()
