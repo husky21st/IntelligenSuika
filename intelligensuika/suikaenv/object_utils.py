@@ -1,4 +1,4 @@
-from setting import *
+from suikaenv.setting import *
 import pymunk
 import pygame
 import random
@@ -23,7 +23,8 @@ class PhysicsCircle:
         shape.friction   = FRUIT_INFO[fruit_label][3]
         shape.collision_type = 1
         self.shape,self.body = shape, body
-    def update(self):
+ 
+    def pos_check(self):
         if self.body.position.y+self.radius > self.bottom_y+10:
             self.body.position = self.body.position.x, self.bottom_y - self.radius
             self.body.velocity = self.body.velocity.x, self.body.velocity.y * RESTITUTION

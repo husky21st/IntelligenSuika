@@ -6,8 +6,9 @@ from typing import Optional
 import pygame
 import numpy as np
 import random
-from setting import *
-from object_utils import *
+from suikaenv.setting import *
+from suikaenv.object_utils import *
+import sys
 
 def convert_position(x):
     x = x[0]
@@ -18,42 +19,44 @@ def convert_position(x):
 class SuikaEnv(gym.Env):
     metadate ={
         'render.modes': ['human', 'rgb_array'],
-        "render_fps": FRAMES_PER_SECOND # 1秒間のフレーム数
+        "_render_fps": FRAMES_PER_SECOND # 1秒間のフレーム数
     }
-    def __init__(self,render_mode: Optional[str] = None, g=10.0):
-        self.render_mode = render_mode
-        self.fruit_info  = FRUIT_INFO
-        
+    def __init__(self):
+        self.fruit_info   = FRUIT_INFO
         self.wait_frames  = WAIT_FRAMES
         self.frame_count  = 0
         self.action_space = spaces.Box(low=-1, high=1, shape=(1,), dtype=np.float32)      # -1~1の値を受け取る
         # self.observation_space    = spaces.Box(low=-1, high=1, shape=(2,), dtype=np.float32) # 2つの値を返す
-        self.default_observation  = [[0.0,0.0,0.0] for _ in range(MAX_FRUIT_NUM)]                             # 60個の果物の位置を初期化
-        self.observation_space    = spaces.Box(low=-1, high=1, shape=(MAX_FRUIT_NUM,3), dtype=np.float32)
+        self.default_observation  = [[0.0,0.0, 0] for _ in range(MAX_FRUIT_NUM)]          # 現在の果物と次の果物のラベルと60個の果物の位置を初期化 size: (62×3)
+        self.observation_space    = spaces.Box(low=-1, high=11, shape=(MAX_FRUIT_NUM,3), dtype=np.float32)
         # self.max_fruit_num = MAX_FRUIT_NUM
-        self.reward        = REWARD_DEFAULT
-        self.total_reward  = 0
-        
+        self.reward        = 0
+        self.reset()
+                
     def step(self,action):
         # actionは-1~1の値
         # actionを受けて、次の状態,報酬,エピソード終了判定(Game Overかどうか)を返す.
-        print(f"action:{action}")
         action = convert_position(action)
-        print(f"action:{action}")
-        self.total_reward = 0 # 報酬の初期化
         self.drop_fruit(action)
         
+        self.reward = 0
+        self.merge_fruits_lsit = []
         # 指定フレーム数で待機
         while self.frame_count < self.wait_frames:
             for fruit in self.fruit_box:
-                fruit.update()
-            self.render()
-            self.clock.tick(self.metadate["render_fps"])
+                fruit.pos_check()
+            self.update()
+            # self.render()
+            # self.clock.tick(self.metadate["_render_fps"])
             self.frame_count += 1
+        
+        self.now_fruit_label = self.next_fruit_label
+        self.next_fruit, self.next_fruit_label = self.create_next_fruit()
         self.frame_count = 0
-        done = self.check_game_over()
-        return self._get_obs(), self.total_reward, done, {}
-    
+        self.reward      = self.calc_reward()
+        done             = self.check_game_over()
+        return self._get_obs(), self.reward, done, {}
+
     def reset(self, *, seed: Optional[int] = None, options: Optional[dict] = None):
         super().reset(seed=seed)
         # pymunkの初期化
@@ -75,21 +78,35 @@ class SuikaEnv(gym.Env):
         self.screen = None
         self.clock  = None
         self.fruit_box   = []
-        
-        self.render()
-        # return self._get_obs(), {}
-        return self._get_obs()
+        self.merge_fruits_lsit = [] # 1stepで結合した果物リスト
+        self.clock  = pygame.time.Clock()
+        return self._get_obs(), {}
+    
+
+    def seed(self, seed=None):
+        pass
     
     def _get_obs(self):
         # 仮) 現在の果物のラベル, 次の果物のラベル, 現在の箱の状態(果物の位置)
         # obs = [[0.0,0.0] for _ in range(self.max_fruit_num)]
         obs = self.default_observation
-        for i in range(len(self.fruit_box)):
+        obs[0] = [0, 0, self.now_fruit_label]
+        obs[1] = [0, 0, self.next_fruit_label]
+        for i in range(2, len(self.fruit_box)):
             x = ((self.fruit_box[i].body.position.x-((SCREEN_WIDTH-BOX_WIDTH)//2)) / BOX_WIDTH)*2 -1
             y = 1-(self.fruit_box[i].body.position.y - 200) / BOX_HEIGHT
-            label = self.fruit_box[i].body.label / 11 # label情報を11~1　→　0.1~1.0に変換
+            label = self.fruit_box[i].body.label
             obs[i] = [x,y,label]
+        obs = np.array(obs, dtype=np.float32)
         return obs
+    
+    def calc_reward(self):
+        # listの中から最大のものを選ぶ
+        if len(self.merge_fruits_lsit) == 0:
+            return 0
+        max_label = max(self.merge_fruits_lsit)
+        reward = self.fruit_info[max_label][4]
+        return reward
     
     def merge_fruits(self,arbiter, space, _):
         a, b = arbiter.shapes
@@ -110,7 +127,7 @@ class SuikaEnv(gym.Env):
                 fruit.velocity = mid_v
                 self.fruit_box.append(fruit)
                 self.space.add(fruit.body,fruit.shape)
-                self.total_reward += self.reward
+                self.merge_fruits_lsit.append(new_label)
             return False
         return True
     
@@ -122,36 +139,37 @@ class SuikaEnv(gym.Env):
     def check_game_over(self):
         for fruit in self.fruit_box:
             if fruit.body.position.y + fruit.radius < GAME_OVER_LINE:
-                self.total_reward -= self.reward
+                self.reward = -1
                 return True 
         return False
-    
+
     def drop_fruit(self,x):
         y = 180 # 固定
         fruit = PhysicsCircle((x, y), self.now_fruit_label)
         self.space.add(fruit.body, fruit.shape)
         self.fruit_box.append(fruit)
-        self.now_fruit_label = self.next_fruit_label
-        self.next_fruit, self.next_fruit_label = self.create_next_fruit()
-        print(f"落とす果物:{self.now_fruit_label}, 次に来る果物{self.next_fruit_label}")
+
+    
+    def update(self):
+         self.space.step(1 / PYMUNK_FPS) # 物理シミュレーションの更新
     
     # 描写に関わる関数
-    def render(self):
+    def render(self, mode='human', close=False):
         if self.screen is None:
             pygame.init()
-            if self.render_mode == 'human':
+            if mode == 'human':
                 pygame.display.init()
                 self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
             # else: # mode in "rgb_array"
             #     self.screen = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
         if self.clock is None:
             self.clock  = pygame.time.Clock()
-            
         self.space.step(1 / PYMUNK_FPS) # 物理シミュレーションの更新
-        if self.render_mode == 'rgb_array':
-            self.clock.tick(self.metadate["render_fps"])  
+        if mode == 'rgb_array':
+            self.clock.tick(self.metadate["_render_fps"])  
+            return np.array(pygame.surfarray.pixels3d(self.screen))
             
-        elif self.render_mode == 'human':
+        elif mode == 'human':
             self.screen.fill((255,255,255))
             # 箱の描写 ()
             pygame.draw.line(self.screen, (200, 200, 200), (CURSOR_BOUND_MIN_X,200), (CURSOR_BOUND_MIN_X,200+BOX_HEIGHT),5) # 左後壁
@@ -165,23 +183,29 @@ class SuikaEnv(gym.Env):
             for wall in self.walls:
                 wall.draw(self.screen)
             pygame.draw.line(self.screen, (128, 128, 128),((SCREEN_WIDTH-BOX_WIDTH)//2, 240),(SCREEN_WIDTH-(SCREEN_WIDTH-BOX_WIDTH)//2, 240),5)
-            self.clock.tick(self.metadate["render_fps"])
+            self.clock.tick(self.metadate["_render_fps"])
             pygame.display.flip()
+            return None
 
-    def close(self):
+    def _close(self):
         if self.screen is not None:
             pygame.display.quit()
             pygame.quit()
             self.isopen = False
-            
+
+
+# import intelli_suika
 # import gym
 # import numpy as np
+# env = gym.make('intelligencesuika-v0')
+# env.mode = 'human'
+# state = env.reset()
 
 # # mode in "human" or "rgb_array"
-# env = SuikaEnv(render_mode='human')
+# env = SuikaEnv(mode='human')
 # # 環境をリセットして初期状態を取得
 # state = env.reset()
-# # 何ステップかのシミュレーション
+# 何ステップかのシミュレーション
 # for i in range(10):
 #     print(f"episode:{i}")
 #     done = False
@@ -193,6 +217,6 @@ class SuikaEnv(gym.Env):
 #         # アクションを環境に適用し、次の状態と報酬、終了フラグを取得
 #         state, reward, done, info = env.step(action)
 #         print(reward, done)
-#         env.render()
+#         env._render()
 # # 環境を閉じる
 # env.close()
