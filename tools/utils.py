@@ -9,6 +9,15 @@ def make_dir(dir_path):
 		os.mkdir(dir_path)
 
 
+def get_image_files_path(path):
+	files = list()
+	for pathname, dirnames, filenames in os.walk(path):
+		for filename in filenames:
+			if filename.endswith('.png'):
+				files.append(os.path.join(pathname, filename))
+	return files
+
+
 def rotate_img(image, angle, scale, border_value=(255, 255, 255, 0)):
 	height, width = image.shape[:2]
 	center = (int(width / 2), int(height / 2))
