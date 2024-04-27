@@ -26,7 +26,6 @@ class SuikaEnv(gym.Env):
         self.wait_frames  = WAIT_FRAMES
         self.frame_count  = 0
         self.action_space = spaces.Box(low=-1, high=1, shape=(1,), dtype=np.float32)      # -1~1の値を受け取る
-        # self.observation_space    = spaces.Box(low=-1, high=1, shape=(2,), dtype=np.float32) # 2つの値を返す
         self.default_observation  = [[0.0,0.0, 0] for _ in range(MAX_FRUIT_NUM)]          # 現在の果物と次の果物のラベルと60個の果物の位置を初期化 size: (62×3)
         self.observation_space    = spaces.Box(low=-1, high=11, shape=(MAX_FRUIT_NUM,3), dtype=np.float32)
         # self.max_fruit_num = MAX_FRUIT_NUM
@@ -46,8 +45,9 @@ class SuikaEnv(gym.Env):
             for fruit in self.fruit_box:
                 fruit.pos_check()
             self.update()
-            # self.render()
-            # self.clock.tick(self.metadate["_render_fps"])
+            if True:
+                self.render()
+                self.clock.tick(self.metadate["_render_fps"])
             self.frame_count += 1
         
         self.now_fruit_label = self.next_fruit_label
@@ -90,16 +90,23 @@ class SuikaEnv(gym.Env):
     
     def _get_obs(self):
         # 仮) 現在の果物のラベル, 次の果物のラベル, 現在の箱の状態(果物の位置)
+        # sort　大きい順
         # obs = [[0.0,0.0] for _ in range(self.max_fruit_num)]
-        obs = self.default_observation
-        obs[0] = [0, 0, self.now_fruit_label]
-        obs[1] = [0, 0, self.next_fruit_label]
-        for i in range(2, len(self.fruit_box)):
+        obs = []
+        for i in range(0, len(self.fruit_box)):
             x = ((self.fruit_box[i].body.position.x-((SCREEN_WIDTH-BOX_WIDTH)//2)) / BOX_WIDTH)*2 -1
             y = 1-(self.fruit_box[i].body.position.y - 200) / BOX_HEIGHT
             label = self.fruit_box[i].body.label
-            obs[i] = [x,y,label]
+            obs.append([y,x,label])
         obs = np.array(obs, dtype=np.float32)
+        if len(obs) == 0:
+            obs = np.array([[0.0,0.0, 0] for _ in range(MAX_FRUIT_NUM)], dtype=np.float32)
+        else:
+            obs = obs[np.argsort(obs[:,0])]
+            tmp = [[0.0,0.0, 0] for _ in range(MAX_FRUIT_NUM-len(self.fruit_box))]
+            tmp = np.array(tmp, dtype=np.float32)
+            obs = np.vstack([obs,tmp])
+        obs = np.vstack([obs,[self.now_fruit_label, self.next_fruit_label, self.count_box_fruits()]])
         return obs.flatten()
     
     def calc_reward(self):
@@ -133,6 +140,9 @@ class SuikaEnv(gym.Env):
             return False
         return True
     
+    def count_box_fruits(self):
+        return len(self.fruit_box)
+        
     def create_next_fruit(self):
         next_fruit_label = random.randint(1, len(FRUIT_INFO)-7)
         next_fruit = PhysicsCircle((400.5, 30), next_fruit_label)
