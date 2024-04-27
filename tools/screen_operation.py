@@ -3,12 +3,19 @@ import pywinctl as pwc
 import time
 import serial
 
+window_name = "ムービー収録"  # QuickTime Player
+
+
+def active_window():
+	window = pwc.getWindowsWithTitle(window_name)[0]
+	window.activate()
+
 
 def get_screen():
 	"""QuickTime Player画面のスクリーンショットを取得
 
 	"""
-	window = pwc.getWindowsWithTitle("ムービー収録")[0]  # QuickTime Player
+	window = pwc.getWindowsWithTitle(window_name)[0]
 	x, y = window.topleft
 	width, height = window.size
 	sc = pag.screenshot(region=(x, y, width, height))
