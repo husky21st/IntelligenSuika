@@ -1,5 +1,5 @@
-import gym
-from gym import spaces
+import gymnasium
+from gymnasium import spaces
 import pymunk
 from pymunk.vec2d import Vec2d
 from typing import Optional
@@ -16,7 +16,7 @@ def convert_position(x):
     x = x * (CURSOR_BOUND_MAX_X - CURSOR_BOUND_MIN_X) + CURSOR_BOUND_MIN_X
     return int(x)
 
-class SuikaEnv(gym.Env):
+class SuikaEnv(gymnasium.Env):
     metadate ={
         'render.modes': ['human', 'rgb_array'],
         "_render_fps": FRAMES_PER_SECOND # 1秒間のフレーム数
@@ -25,9 +25,10 @@ class SuikaEnv(gym.Env):
         self.fruit_info   = FRUIT_INFO
         self.wait_frames  = WAIT_FRAMES
         self.frame_count  = 0
+        self.render_mode = "rgb_array"
         self.action_space = spaces.Box(low=-1, high=1, shape=(1,), dtype=np.float32)      # -1~1の値を受け取る
-        self.default_observation  = [[0.0,0.0, 0] for _ in range(MAX_FRUIT_NUM)]          # 現在の果物と次の果物のラベルと60個の果物の位置を初期化 size: (62×3)
-        self.observation_space    = spaces.Box(low=-1, high=11, shape=(MAX_FRUIT_NUM,3), dtype=np.float32)
+        # self.default_observation  = [[0.0,0.0, 0] for _ in range(MAX_FRUIT_NUM)]          # 現在の果物と次の果物のラベルと60個の果物の位置を初期化 size: (61×3)
+        self.observation_space    = spaces.Box(low=-1, high=100, shape=(MAX_FRUIT_NUM+1,3), dtype=np.float32)
         # self.max_fruit_num = MAX_FRUIT_NUM
         self.reward        = 0
         self.reset()
@@ -45,9 +46,6 @@ class SuikaEnv(gym.Env):
             for fruit in self.fruit_box:
                 fruit.pos_check()
             self.update()
-            if True:
-                self.render()
-                self.clock.tick(self.metadate["_render_fps"])
             self.frame_count += 1
         
         self.now_fruit_label = self.next_fruit_label
@@ -55,12 +53,11 @@ class SuikaEnv(gym.Env):
         self.frame_count = 0
         self.reward      = self.calc_reward()
         done             = self.check_game_over()
-        return self._get_obs(), self.reward, done, {}
-        # return self._get_obs(), self.reward, done,{}, {}
+        return self._get_obs(), self.reward, done, False, {}
 
     # def reset(self, *, seed: Optional[int] = None, options: Optional[dict] = None):
-    def reset(self):
-    #     super().reset(seed=seed)
+    def reset(self, seed=None, options=None):
+        super().reset(seed=seed, options=options)
         # pymunkの初期化
         self.space         = pymunk.Space()
         self.space.gravity = (0, GRAVITY)
@@ -82,7 +79,7 @@ class SuikaEnv(gym.Env):
         self.fruit_box   = []
         self.merge_fruits_lsit = [] # 1stepで結合した果物リスト
         self.clock  = pygame.time.Clock()
-        return self._get_obs()
+        return self._get_obs(), {}
     
 
     def seed(self, seed=None):
@@ -107,7 +104,7 @@ class SuikaEnv(gym.Env):
             tmp = np.array(tmp, dtype=np.float32)
             obs = np.vstack([obs,tmp])
         obs = np.vstack([obs,[self.now_fruit_label, self.next_fruit_label, self.count_box_fruits()]])
-        return obs.flatten()
+        return obs.astype(np.float32)
     
     def calc_reward(self):
         # listの中から最大のものを選ぶ
