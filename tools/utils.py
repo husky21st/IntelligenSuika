@@ -9,7 +9,7 @@ def make_dir(dir_path):
 		os.mkdir(dir_path)
 
 
-def rotate_img(image, angle, scale, border_value=(255, 255, 255)):
+def rotate_img(image, angle, scale, border_value=(255, 255, 255, 0)):
 	height, width = image.shape[:2]
 	center = (int(width / 2), int(height / 2))
 	trans = cv2.getRotationMatrix2D(center, angle, scale)
@@ -90,7 +90,7 @@ def template_match(
 	return np.array(all_found_idx)
 
 
-def detect_xy(templates, img, threshold=0.2, nms_thresh=0.2):
+def detect_xy(templates, img, threshold=0.2, delete_match=False):
 	all_found_idx = template_match(
 		image=img,
 		templs=templates,
@@ -98,7 +98,7 @@ def detect_xy(templates, img, threshold=0.2, nms_thresh=0.2):
 		threshold=threshold
 	)
 	if all_found_idx.size == 0:
-		return img, []
+		return img, np.empty(0)
 
 	fruit_locations = list()
 	templ_l = templates[0].shape[0]
@@ -108,6 +108,20 @@ def detect_xy(templates, img, threshold=0.2, nms_thresh=0.2):
 		# detect xy
 		fruit_locations.append(found_idx + templ_l // 2)
 		# delete fruit from img
-		img[found_idx[0]:found_idx[0] + templ_l, found_idx[1]:found_idx[1] + templ_l, :] *= delete_area
+		if delete_match:
+			img[found_idx[0]:found_idx[0] + templ_l, found_idx[1]:found_idx[1] + templ_l, :] *= delete_area
 
-	return img, fruit_locations
+	return img, np.array(fruit_locations)
+
+
+def calc_obs_space(field_fruits, lower_idx, higher_idx):
+	obs_space = np.copy(field_fruits).astype(float)
+	y_length = higher_idx[0] - lower_idx[0]
+	x_length = higher_idx[1] - lower_idx[1]
+	# calc y
+	obs_space[:, 0] = 1 - (field_fruits[:, 0] - lower_idx[0]) / y_length
+	obs_space[:, 0] = np.clip(obs_space[:, 0], 0, 1.0)
+	# calc x
+	obs_space[:, 1] = (field_fruits[:, 1] - lower_idx[1]) / x_length * 2 - 1
+	obs_space[:, 1] = np.clip(obs_space[:, 1], -1.0, 1.0)
+	return obs_space
