@@ -1,4 +1,4 @@
-from suikaenv.setting import *
+from .setting import *
 import pymunk
 import pygame
 import random

@@ -6,8 +6,8 @@ from typing import Optional
 import pygame
 import numpy as np
 import random
-from suikaenv.setting import *
-from suikaenv.object_utils import *
+from .setting import *
+from .object_utils import *
 import sys
 
 def convert_position(x):
@@ -33,7 +33,7 @@ class SuikaEnv(gym.Env):
         self.reward        = 0
         self.reset()
                 
-    def _step(self,action):
+    def step(self,action):
         # actionは-1~1の値
         # actionを受けて、次の状態,報酬,エピソード終了判定(Game Overかどうか)を返す.
         action = convert_position(action)
@@ -58,9 +58,9 @@ class SuikaEnv(gym.Env):
         return self._get_obs(), self.reward, done, {}
         # return self._get_obs(), self.reward, done,{}, {}
 
-    #def _reset(self, *, seed: Optional[int] = None, options: Optional[dict] = None):
-    def _reset(self):
-        #super().reset(seed=seed)
+    # def reset(self, *, seed: Optional[int] = None, options: Optional[dict] = None):
+    def reset(self):
+    #     super().reset(seed=seed)
         # pymunkの初期化
         self.space         = pymunk.Space()
         self.space.gravity = (0, GRAVITY)
@@ -82,10 +82,10 @@ class SuikaEnv(gym.Env):
         self.fruit_box   = []
         self.merge_fruits_lsit = [] # 1stepで結合した果物リスト
         self.clock  = pygame.time.Clock()
-        return self._get_obs(), {}
+        return self._get_obs()
     
 
-    def _seed(self, seed=None):
+    def seed(self, seed=None):
         pass
     
     def _get_obs(self):
@@ -100,7 +100,7 @@ class SuikaEnv(gym.Env):
             label = self.fruit_box[i].body.label
             obs[i] = [x,y,label]
         obs = np.array(obs, dtype=np.float32)
-        return obs
+        return obs.flatten()
     
     def calc_reward(self):
         # listの中から最大のものを選ぶ
@@ -156,7 +156,7 @@ class SuikaEnv(gym.Env):
          self.space.step(1 / PYMUNK_FPS) # 物理シミュレーションの更新
     
     # 描写に関わる関数
-    def _render(self, mode='human', close=False):
+    def render(self, mode='human', close=False):
         if self.screen is None:
             pygame.init()
             if mode == 'human':
@@ -189,7 +189,7 @@ class SuikaEnv(gym.Env):
             pygame.display.flip()
             return None
 
-    def _close(self):
+    def close(self):
         if self.screen is not None:
             pygame.display.quit()
             pygame.quit()
