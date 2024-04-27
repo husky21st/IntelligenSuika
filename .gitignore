@@ -159,6 +159,8 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 .idea/
 
+assets/alpha
+assets/tmp
 materials/yt-dlp_macos
 materials/movies
 materials/images
