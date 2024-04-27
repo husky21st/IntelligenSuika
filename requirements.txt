@@ -5,8 +5,9 @@ pyautogui
 pywinctl
 pyserial
 tqdm
-gym==0.9.7
 torch
-pfrl
 pygame
 pymunk
+swig
+gymnasium[box2d]
+stable-baselines3[extra]>=2.0.0a4
