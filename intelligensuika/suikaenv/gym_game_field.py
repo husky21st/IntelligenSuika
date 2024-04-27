@@ -33,7 +33,7 @@ class SuikaEnv(gym.Env):
         self.reward        = 0
         self.reset()
                 
-    def step(self,action):
+    def _step(self,action):
         # actionは-1~1の値
         # actionを受けて、次の状態,報酬,エピソード終了判定(Game Overかどうか)を返す.
         action = convert_position(action)
@@ -56,9 +56,11 @@ class SuikaEnv(gym.Env):
         self.reward      = self.calc_reward()
         done             = self.check_game_over()
         return self._get_obs(), self.reward, done, {}
+        # return self._get_obs(), self.reward, done,{}, {}
 
-    def reset(self, *, seed: Optional[int] = None, options: Optional[dict] = None):
-        super().reset(seed=seed)
+    #def _reset(self, *, seed: Optional[int] = None, options: Optional[dict] = None):
+    def _reset(self):
+        #super().reset(seed=seed)
         # pymunkの初期化
         self.space         = pymunk.Space()
         self.space.gravity = (0, GRAVITY)
@@ -83,7 +85,7 @@ class SuikaEnv(gym.Env):
         return self._get_obs(), {}
     
 
-    def seed(self, seed=None):
+    def _seed(self, seed=None):
         pass
     
     def _get_obs(self):
@@ -154,7 +156,7 @@ class SuikaEnv(gym.Env):
          self.space.step(1 / PYMUNK_FPS) # 物理シミュレーションの更新
     
     # 描写に関わる関数
-    def render(self, mode='human', close=False):
+    def _render(self, mode='human', close=False):
         if self.screen is None:
             pygame.init()
             if mode == 'human':

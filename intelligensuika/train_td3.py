@@ -197,6 +197,7 @@ def main():
         )
         import json
         import os
+        
 
         with open(os.path.join(args.outdir, "demo_scores.json"), "w") as f:
             json.dump(eval_stats, f)
