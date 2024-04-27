@@ -45,7 +45,7 @@ class SuikaEnv(gym.Env):
             for fruit in self.fruit_box:
                 fruit.pos_check()
             self.update()
-            if True:
+            if False:
                 self.render()
                 self.clock.tick(self.metadate["_render_fps"])
             self.frame_count += 1
@@ -103,7 +103,6 @@ class SuikaEnv(gym.Env):
         obs = obs[np.argsort(obs[:,0])[::-1]]
         
         obs = np.vstack([obs,[self.now_fruit_label, self.next_fruit_label, self.count_box_fruits()]])
-        print(obs)
         return obs.flatten()
     
     def calc_reward(self):
