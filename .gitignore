@@ -161,3 +161,6 @@ cython_debug/
 
 assets/alpha
 assets/tmp
+materials/yt-dlp_macos
+materials/movies
+materials/images
