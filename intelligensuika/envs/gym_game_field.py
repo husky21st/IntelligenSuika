@@ -23,13 +23,13 @@ class SuikaEnv(gym.Env):
     def __init__(self,render_mode: Optional[str] = None, g=10.0):
         self.render_mode = render_mode
         self.fruit_info  = FRUIT_INFO
-        self.fruit_box   = []
+        
         self.wait_frames  = WAIT_FRAMES
         self.frame_count  = 0
         self.action_space = spaces.Box(low=-1, high=1, shape=(1,), dtype=np.float32)      # -1~1の値を受け取る
         # self.observation_space    = spaces.Box(low=-1, high=1, shape=(2,), dtype=np.float32) # 2つの値を返す
-        self.default_observation  = [[0.0,0.0] for _ in range(MAX_FRUIT_NUM)]                             # 60個の果物の位置を初期化
-        self.observation_space    = spaces.Box(low=-1, high=1, shape=(MAX_FRUIT_NUM,2), dtype=np.float32)
+        self.default_observation  = [[0.0,0.0,0.0] for _ in range(MAX_FRUIT_NUM)]                             # 60個の果物の位置を初期化
+        self.observation_space    = spaces.Box(low=-1, high=1, shape=(MAX_FRUIT_NUM,3), dtype=np.float32)
         # self.max_fruit_num = MAX_FRUIT_NUM
         self.reward        = REWARD_DEFAULT
         self.total_reward  = 0
@@ -74,6 +74,8 @@ class SuikaEnv(gym.Env):
         self.next_fruit, self.next_fruit_label = self.create_next_fruit()
         self.screen = None
         self.clock  = None
+        self.fruit_box   = []
+        
         self.render()
         # return self._get_obs(), {}
         return self._get_obs()
@@ -85,7 +87,8 @@ class SuikaEnv(gym.Env):
         for i in range(len(self.fruit_box)):
             x = ((self.fruit_box[i].body.position.x-((SCREEN_WIDTH-BOX_WIDTH)//2)) / BOX_WIDTH)*2 -1
             y = 1-(self.fruit_box[i].body.position.y - 200) / BOX_HEIGHT
-            obs[i] = [x,y]
+            label = self.fruit_box[i].body.label / 11 # label情報を11~1　→　0.1~1.0に変換
+            obs[i] = [x,y,label]
         return obs
     
     def merge_fruits(self,arbiter, space, _):
@@ -119,7 +122,8 @@ class SuikaEnv(gym.Env):
     def check_game_over(self):
         for fruit in self.fruit_box:
             if fruit.body.position.y + fruit.radius < GAME_OVER_LINE:
-                return True
+                self.total_reward -= self.reward
+                return True 
         return False
     
     def drop_fruit(self,x):
@@ -178,14 +182,17 @@ class SuikaEnv(gym.Env):
 # # 環境をリセットして初期状態を取得
 # state = env.reset()
 # # 何ステップかのシミュレーション
-# for _ in range(1000):
-#     # ランダムなアクションを生成
-#     action = env.action_space.sample()
-#     # アクションを環境に適用し、次の状態と報酬、終了フラグを取得
-#     state, reward, done, info = env.step(action)
-#     print(reward, done)
-#     env.render()
-#     if done:
-#         break
+# for i in range(10):
+#     print(f"episode:{i}")
+#     done = False
+#     state = env.reset()
+#     while not done:
+        
+#         # ランダムなアクションを生成
+#         action = env.action_space.sample()
+#         # アクションを環境に適用し、次の状態と報酬、終了フラグを取得
+#         state, reward, done, info = env.step(action)
+#         print(reward, done)
+#         env.render()
 # # 環境を閉じる
 # env.close()

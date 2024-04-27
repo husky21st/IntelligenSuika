@@ -7,7 +7,7 @@ PYMUNK_FPS        = 45  # pymunkの更新頻度
 WALL_ELASTICITY = 0.01  # 壁の弾性係数
 WALL_FRICTION   = 1     # 壁の摩擦係数
 MAX_FRUIT_NUM   = 60    # 最大フルーツ数
-GAME_OVER_LINE  = 400 # defalut: 240
+GAME_OVER_LINE  = 500 # defalut: 240
 
 # [色, 半径, 弾性力, 摩擦力]
 FRUIT_INFO = [
