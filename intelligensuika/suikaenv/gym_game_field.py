@@ -80,6 +80,8 @@ class SuikaEnv(gymnasium.Env):
 		self.frame_count += 1
 		if self.render_mode == "human":
 			self.render()
+		if done:
+			print(obs)
 		return obs, self.reward, done, False, {}
 
 	def reset(self, seed=None, options=None):
@@ -102,7 +104,7 @@ class SuikaEnv(gymnasium.Env):
 		obs = np.zeros((MAX_FRUIT_NUM + 1, 3), dtype=np.float32)
 		for i, _fruit in enumerate(self.fruit_box):
 			obs[i, 1] = ((_fruit.body.position.x - ((SCREEN_WIDTH - BOX_WIDTH) // 2)) / BOX_WIDTH) * 2 - 1
-			obs[i, 0] = 1 - (_fruit.body.position.y - BOX_TOP_Y) / BOX_HEIGHT
+			obs[i, 0] = 1 - (_fruit.body.position.y - _fruit.radius - BOX_TOP_Y) / BOX_HEIGHT
 			obs[i, 2] = _fruit.label
 		obs = obs[np.argsort(obs[:, 0])[::-1]]
 		obs[-1] = np.array([self.now_fruit_label, self.next_fruit_label, self.count_box_fruits()])
