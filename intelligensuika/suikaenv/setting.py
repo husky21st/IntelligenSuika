@@ -1,39 +1,40 @@
-GRAVITY        = 980    # 重力加速度
-RESTITUTION    = 0.1    # 弾性係数
-REWARD_DEFAULT = 0.1    # デフォルトの報酬
-FRAMES_PER_SECOND = 120 # 1秒間に描画するフレーム数
-WAIT_FRAMES       = 120  # 観測を送るまでの待機フレーム数
-PYMUNK_FPS        = 45  # pymunkの更新頻度
-WALL_ELASTICITY = 0.01  # 壁の弾性係数
-WALL_FRICTION   = 1     # 壁の摩擦係数
-MAX_FRUIT_NUM   = 60    # 最大フルーツ数
-GAME_OVER_LINE  = 240 # defalut: 240
+GRAVITY = 980  # 重力加速度
+ELASTICITY_SCALE = 0
+FRICTION_SCALE = 0.8
+FRAMES_PER_SECOND = 300  # 1秒間に描画するフレーム数
+WAIT_FRAMES = 300  # 観測を送るまでの待機フレーム数 # 30
+PYMUNK_FPS = 90  # pymunkの更新頻度
+WALL_ELASTICITY = 0.01 * ELASTICITY_SCALE  # 壁の弾性係数
+WALL_FRICTION = 0.3 * FRICTION_SCALE  # 壁の摩擦係数
+MAX_FRUIT_NUM = 50  # 最大フルーツ数
+GAME_OVER_LINE = 0.97
 
 # [色, 半径, 弾性力, 摩擦力, 報酬]
 FRUIT_INFO = [
-    (None), # 0番目は使わない
-    ((220, 20, 60),    9, 0.3,0.85, 0.0), # サクランボ
-    ((250, 128, 114), 14, 0.3,0.85, 0.1), # イチゴ
-    ((186, 85, 211),  20, 0.3,0.85, 0.2), # ブドウ
-    ((255, 165, 0),   25, 0.3,0.85, 0.3), # デコポン
-    ((255, 140, 0),   32, 0.3,0.85, 0.4), # 柿
-    ((255, 0, 0),     40, 0.3,0.85, 0.5), # リンゴ
-    ((240, 230, 140), 45, 0.3,0.85, 0.6), # 梨
-    ((255, 192, 203), 50, 0.3,0.85, 0.7), # 桃
-    ((255, 255, 0),   60, 0.3,1.00, 0.8), # パイナップル
-    ((173, 255, 47),  80, 0.3,0.90, 0.9), # メロン
-    ((0, 128, 0),     95, 0.3,0.75, 1.0)  # スイカ
+	(None, 0, 0 * ELASTICITY_SCALE, 0 * FRICTION_SCALE, 0),  # 0番目は使わない
+	((220, 20, 60), 18, 0.01 * ELASTICITY_SCALE, 0.9 * FRICTION_SCALE, 0.1),  # サクランボ
+	((250, 128, 114), 24, 0.01 * ELASTICITY_SCALE, 0.7 * FRICTION_SCALE, 0.1),  # イチゴ
+	((186, 85, 211), 36, 0.01 * ELASTICITY_SCALE, 0.9 * FRICTION_SCALE, 0.2),  # ブドウ
+	((255, 165, 0), 39.5, 0.01 * ELASTICITY_SCALE, 0.9 * FRICTION_SCALE, 0.3),  # デコポン
+	((255, 140, 0), 50.5, 0.01 * ELASTICITY_SCALE, 0.7 * FRICTION_SCALE, 0.4),  # 柿
+	((255, 0, 0), 64, 0.01 * ELASTICITY_SCALE, 0.8 * FRICTION_SCALE, 0.5),  # リンゴ
+	((240, 230, 140), 74, 0.01 * ELASTICITY_SCALE, 0.9 * FRICTION_SCALE, 0.6),  # 梨
+	((255, 192, 203), 92.5, 0.01 * ELASTICITY_SCALE, 1.5 * FRICTION_SCALE, 0.7),  # 桃
+	((255, 255, 0), 102, 0.01 * ELASTICITY_SCALE, 1.9 * FRICTION_SCALE, 0.8),  # パイナップル
+	((173, 255, 47), 126.5, 0.01 * ELASTICITY_SCALE, 2.0 * FRICTION_SCALE, 0.9),  # メロン
+	((0, 128, 0), 149, 0.01 * ELASTICITY_SCALE, 3.0 * FRICTION_SCALE, 1.0)  # スイカ
 ]
 
-
 # 固定値
-BACKGROUND_COLOR = (255,255,255)
-SCREEN_WIDTH  = 450
-SCREEN_HEIGHT = 640
-BOX_WIDTH  = 320
-BOX_HEIGHT = 400
-BOTTOM_Y = 200 + BOX_HEIGHT
-SIDE_X   = [(SCREEN_WIDTH-BOX_WIDTH)//2,(SCREEN_WIDTH-BOX_WIDTH)//2 + BOX_WIDTH]
-CURSOR_BOUND_MIN_X = (SCREEN_WIDTH - BOX_WIDTH) // 2 + 25
-CURSOR_BOUND_MAX_X = (SCREEN_WIDTH + BOX_WIDTH) // 2 - 25
-
+BACKGROUND_COLOR = (255, 255, 255)
+SCREEN_WIDTH = 550
+SCREEN_HEIGHT = 800
+LINE_WIDTH = 16
+BOX_TOP_Y = 106
+LINE_TOP_Y = 120
+BOX_BOTTOM_Y = 744
+BOX_WIDTH = 533 - 19
+BOX_HEIGHT = BOX_BOTTOM_Y - BOX_TOP_Y
+CURSOR_BOUND_MIN_X = 54
+CURSOR_BOUND_MAX_X = 484
+CURSOR_Y = 74
