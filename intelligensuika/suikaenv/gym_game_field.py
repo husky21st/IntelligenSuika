@@ -80,8 +80,6 @@ class SuikaEnv(gymnasium.Env):
 		self.frame_count += 1
 		if self.render_mode == "human":
 			self.render()
-		if done:
-			print(obs)
 		return obs, self.reward, done, False, {}
 
 	def reset(self, seed=None, options=None):
