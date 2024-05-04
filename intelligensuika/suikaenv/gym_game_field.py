@@ -9,17 +9,9 @@ from .setting import *
 from .object_utils import PhysicsFruit, Line
 from copy import copy
 
-WALLS = [
-	Line(((SCREEN_WIDTH - BOX_WIDTH) // 2 - LINE_WIDTH // 2, LINE_TOP_Y), ((SCREEN_WIDTH - BOX_WIDTH) // 2 - LINE_WIDTH // 2, BOX_BOTTOM_Y), WALL_ELASTICITY, WALL_FRICTION),  # 左前壁
-	Line((SCREEN_WIDTH - (SCREEN_WIDTH - BOX_WIDTH) // 2 + LINE_WIDTH // 2, LINE_TOP_Y), (SCREEN_WIDTH - (SCREEN_WIDTH - BOX_WIDTH) // 2 + LINE_WIDTH // 2, BOX_BOTTOM_Y), WALL_ELASTICITY, WALL_FRICTION),  # 右前壁
-	Line(((SCREEN_WIDTH - BOX_WIDTH) // 2, BOX_BOTTOM_Y + LINE_WIDTH // 2), (SCREEN_WIDTH - (SCREEN_WIDTH - BOX_WIDTH) // 2, BOX_BOTTOM_Y + LINE_WIDTH // 2), WALL_ELASTICITY, WALL_FRICTION),  # 下壁
-	Line(((SCREEN_WIDTH - BOX_WIDTH) // 2 - LINE_WIDTH // 2, LINE_TOP_Y), (-200, LINE_TOP_Y), WALL_ELASTICITY, WALL_FRICTION, 1),  # 左壁の延長
-	Line((SCREEN_WIDTH - (SCREEN_WIDTH - BOX_WIDTH) // 2 + LINE_WIDTH // 2, LINE_TOP_Y), (SCREEN_WIDTH+200, LINE_TOP_Y), WALL_ELASTICITY, WALL_FRICTION, 1),  # 右壁の延長
-]
-
 
 def create_new_label():
-	return random.randint(1, len(FRUIT_INFO) - 7)
+	return random.randint(1, 5)
 
 
 def convert_position(x: float):
@@ -29,12 +21,27 @@ def convert_position(x: float):
 
 
 class SuikaEnv(gymnasium.Env):
+
 	metadata = {
 		'render_modes': ['human', 'rgb_array'],
 		"render_fps": FRAMES_PER_SECOND  # 1秒間のフレーム数
 	}
 
 	def __init__(self, render_mode: Optional[str] = None, skip_frame: Optional[int] = 1):
+		self.WALLS = [
+			Line(((SCREEN_WIDTH - BOX_WIDTH) // 2 - LINE_WIDTH // 2, LINE_TOP_Y),
+				((SCREEN_WIDTH - BOX_WIDTH) // 2 - LINE_WIDTH // 2, BOX_BOTTOM_Y), WALL_ELASTICITY, WALL_FRICTION),  # 左前壁
+			Line((SCREEN_WIDTH - (SCREEN_WIDTH - BOX_WIDTH) // 2 + LINE_WIDTH // 2, LINE_TOP_Y),
+				(SCREEN_WIDTH - (SCREEN_WIDTH - BOX_WIDTH) // 2 + LINE_WIDTH // 2, BOX_BOTTOM_Y), WALL_ELASTICITY,
+				WALL_FRICTION),  # 右前壁
+			Line(((SCREEN_WIDTH - BOX_WIDTH) // 2, BOX_BOTTOM_Y + LINE_WIDTH // 2),
+				(SCREEN_WIDTH - (SCREEN_WIDTH - BOX_WIDTH) // 2, BOX_BOTTOM_Y + LINE_WIDTH // 2), WALL_ELASTICITY,
+				WALL_FRICTION),  # 下壁
+			Line(((SCREEN_WIDTH - BOX_WIDTH) // 2 - LINE_WIDTH // 2, LINE_TOP_Y), (-200, LINE_TOP_Y), WALL_ELASTICITY,
+				WALL_FRICTION, 1),  # 左壁の延長
+			Line((SCREEN_WIDTH - (SCREEN_WIDTH - BOX_WIDTH) // 2 + LINE_WIDTH // 2, LINE_TOP_Y),
+				(SCREEN_WIDTH + 200, LINE_TOP_Y), WALL_ELASTICITY, WALL_FRICTION, 1),  # 右壁の延長
+		]
 		self.render_mode = render_mode
 		self.skip_frame = skip_frame
 		self.action_space = spaces.Box(low=-1, high=1, shape=(1,), dtype=np.float32)  # -1~1の値を受け取る
@@ -51,7 +58,7 @@ class SuikaEnv(gymnasium.Env):
 		self.space.damping = 0.5
 		self.handler = self.space.add_collision_handler(1, 1)
 		self.handler.begin = self.merge_fruits
-		self.space.add(*[wall.body for wall in WALLS], *[wall for wall in WALLS])
+		self.space.add(*[wall.body for wall in self.WALLS], *[wall for wall in self.WALLS])
 
 		self.fruit_box = list()
 		self.now_fruit_label = create_new_label()
@@ -59,6 +66,7 @@ class SuikaEnv(gymnasium.Env):
 
 		self.frame_count = 0
 		self.max_label_merged = 0
+		self.get_suika = False
 
 	def step(self, action):
 		# actionは-1~1の値
@@ -66,23 +74,26 @@ class SuikaEnv(gymnasium.Env):
 		self.reward = 0
 		obs = np.zeros(self.observation_space.shape, dtype=np.float32)
 		done = False
+		info = {"do_action": False, "get_reward": False, "is_success": self.get_suika}
 		if self.frame_count % self.skip_frame == 0:
 			action = convert_position(action)
 			self.drop_fruit(action)
 			self.now_fruit_label = self.next_fruit_label
 			self.next_fruit_label = create_new_label()
 			self.max_label_merged = 0
+			info["do_action"] = True
 		elif (self.frame_count + 1) % self.skip_frame == 0:
 			obs = self._get_obs()
 			done = self.check_game_over(obs)
 			self.reward = FRUIT_INFO[self.max_label_merged][4]
+			info["get_reward"] = True
 		self.update()
 		self.frame_count += 1
 		if self.render_mode == "human":
 			self.render()
-		return obs, self.reward, done, False, {}
+		return obs, self.reward, done, False, info
 
-	def reset(self, seed=None, options=None):
+	def reset(self, *, seed=None, options=None):
 		super().reset(seed=seed, options=options)
 		self.screen = None
 		self.clock = None
@@ -93,6 +104,7 @@ class SuikaEnv(gymnasium.Env):
 
 		self.frame_count = 0
 		self.max_label_merged = 0
+		self.get_suika = False
 		if self.render_mode == "human":
 			self.render()
 		return self._get_obs(), {}
@@ -116,9 +128,11 @@ class SuikaEnv(gymnasium.Env):
 			self.remove_fruit(b)
 			self.max_label_merged = max(self.max_label_merged, merged_label)
 			mid_point = (a.body.position + b.body.position) / 2
-			if merged_label < (len(FRUIT_INFO) - 1):
+			if merged_label <= 10:
 				new_label = merged_label + 1
 				self.add_fruit(mid_point, new_label)
+			else:
+				self.get_suika = True
 			return False
 		return True
 
@@ -185,7 +199,7 @@ class SuikaEnv(gymnasium.Env):
 			# self.next_fruit.draw(self.screen)
 			for fruit in self.fruit_box:
 				fruit.draw(self.screen)
-			for wall in WALLS:
+			for wall in self.WALLS:
 				wall.draw(self.screen)
 			# pygame.draw.line(self.screen, (128, 128, 128), ((SCREEN_WIDTH - BOX_WIDTH) // 2, 240),
 			# 				 (SCREEN_WIDTH - (SCREEN_WIDTH - BOX_WIDTH) // 2, 240), 5)
